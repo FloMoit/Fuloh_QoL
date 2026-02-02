@@ -11,6 +11,7 @@ end
 -- Create feature object
 local HelloWorld = {
     name = "HelloWorld",
+    label = "Auto greeting in party",
     shortcut = "hello",
 }
 
@@ -172,6 +173,15 @@ function HelloWorld:HandleCommand(args)
     else
         print("|cff00ff00[HelloWorld]|r: Unknown command. Type /fuloh hello help for commands.")
     end
+end
+
+-- Hook for additional settings in the main hub
+function HelloWorld:OnSettingsUI(parent, yOffset)
+    local Settings = QoL.Features.HelloWorld_Settings
+    if Settings and Settings.CreateEmbeddedSettings then
+        return Settings.CreateEmbeddedSettings(parent, yOffset)
+    end
+    return yOffset
 end
 
 -- Register this feature with Fuloh_QoL

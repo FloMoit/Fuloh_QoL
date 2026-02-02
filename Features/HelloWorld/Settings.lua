@@ -1,5 +1,5 @@
 -- Settings.lua
--- HelloWorld settings panel for greeting customization
+-- HelloWorld settings for greeting customization (Embedded in main hub)
 
 -- Get namespace reference
 local QoL = Fuloh_QoL
@@ -10,92 +10,60 @@ end
 
 local Settings = {}
 
-local panel = nil
-local initialized = false
-
 -- Database accessor
 local function GetDB()
     return Fuloh_QoLDB and Fuloh_QoLDB.HelloWorld or {}
 end
 
--- Helper to create a heading
-local function CreateHeading(text, parent)
-    local header = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    header:SetText(text)
-    return header
-end
-
--- Create the UI elements
-function Settings.Initialize()
-    if initialized then return end
-
-    panel = CreateFrame("Frame", "Fuloh_QoL_HelloWorld_SettingsPanel", UIParent)
-    panel.name = "HelloWorld Greetings"
-    panel.parent = "Fuloh's QoL"  -- Make it a sub-panel
-
-    local title = CreateHeading("HelloWorld Greetings", panel)
-    title:SetPoint("TOPLEFT", 16, -16)
-
-    local desc = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    desc:SetText("Configure your auto-greeting messages. Enter one message per line.")
-    desc:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
-    desc:SetJustifyH("LEFT")
-
-    -- Multi-line EditBox with ScrollFrame
-    local scrollFrame = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
-    scrollFrame:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -20)
-    scrollFrame:SetPoint("BOTTOMRIGHT", -32, 40)
+-- Create the embedded UI elements
+function Settings.CreateEmbeddedSettings(parent, yOffset)
+    -- Indent slightly to show relation to the checkbox
+    local xOffset = 40
+    
+    local label = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    label:SetText("Greeting Messages (one per line):")
+    label:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset - 5)
+    
+    yOffset = yOffset - 25
 
     -- Background for the edit area
-    local bg = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+    local bg = CreateFrame("Frame", nil, parent, "BackdropTemplate")
     bg:SetBackdrop({
         bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
         edgeFile = "Interface\\Buttons\\WHITE8X8",
         tile = true, tileSize = 16, edgeSize = 1,
         insets = { left = 4, right = 4, top = 4, bottom = 4 }
     })
-    bg:SetBackdropColor(0, 0, 0, 0.8)
-    bg:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.5)
-    bg:SetPoint("TOPLEFT", scrollFrame, -5, 5)
-    bg:SetPoint("BOTTOMRIGHT", scrollFrame, 25, -5)
+    bg:SetBackdropColor(0, 0, 0, 0.4)
+    bg:SetBackdropBorderColor(0.5, 0.5, 0.5, 0.3)
+    bg:SetSize(300, 80) -- Height for ~5 lines
+    bg:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset)
 
+    -- ScrollFrame
+    local scrollFrame = CreateFrame("ScrollFrame", "FulohQoL_HelloWorld_Scroll", bg, "UIPanelScrollFrameTemplate")
+    scrollFrame:SetPoint("TOPLEFT", 5, -5)
+    scrollFrame:SetPoint("BOTTOMRIGHT", -25, 5)
+
+    -- EditBox
     local editBox = CreateFrame("EditBox", nil, scrollFrame)
     editBox:SetMultiLine(true)
     editBox:SetMaxLetters(2000)
     editBox:SetAutoFocus(false)
-    editBox:SetFontObject("GameFontHighlight")
-    editBox:SetWidth(scrollFrame:GetWidth() > 0 and scrollFrame:GetWidth() or 500)
+    editBox:SetFontObject("GameFontHighlightSmall")
+    editBox:SetWidth(270)
     scrollFrame:SetScrollChild(editBox)
 
-    -- Make the entire background clickable to focus the editbox
-    bg:EnableMouse(true)
-    bg:SetScript("OnMouseDown", function() editBox:SetFocus() end)
+    -- Load data
+    local db = GetDB()
+    local Utils = QoL.Features.HelloWorld_Utils
+    local list = (db.greetings and #db.greetings > 0)
+                 and db.greetings
+                 or (Utils and Utils.DefaultGreetings or {})
+    local text = table.concat(list, "\n")
+    editBox:SetText(text)
 
-    -- Update width when scroll frame is shown or resized
-    scrollFrame:SetScript("OnSizeChanged", function(self, width)
-        editBox:SetWidth(width)
-    end)
-
-    -- Load data into EditBox when shown
-    panel:SetScript("OnShow", function()
-        local db = GetDB()
-        local Utils = QoL.Features.HelloWorld_Utils
-
-        local list = (db.greetings and #db.greetings > 0)
-                     and db.greetings
-                     or (Utils and Utils.DefaultGreetings or {})
-
-        local text = table.concat(list, "\n")
-        editBox:SetText(text)
-        editBox:SetCursorPosition(0)
-    end)
-
-    -- Save button
-    local saveBtn = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    saveBtn:SetText("Save Greetings")
-    saveBtn:SetSize(120, 25)
-    saveBtn:SetPoint("BOTTOMLEFT", 16, 10)
-    saveBtn:SetScript("OnClick", function()
+    -- Function to save data
+    local function SaveGreetings()
         local text = editBox:GetText()
         local lines = {strsplit("\n", text)}
         local cleaned = {}
@@ -107,36 +75,29 @@ function Settings.Initialize()
         end
         local db = GetDB()
         db.greetings = cleaned
-        print("|cff00ff00[HelloWorld]|r: Greetings updated.")
-        editBox:ClearFocus()
-    end)
+    end
 
-    -- Focus handling
+    -- Save on focus lost
+    editBox:SetScript("OnEditFocusLost", SaveGreetings)
     editBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
 
-    -- Modern Settings Registration
-    if Settings and Settings.RegisterCanvasLayoutCategory then
-        local category = Settings.RegisterCanvasLayoutCategory(panel, "HelloWorld Greetings")
-        category.ID = "HelloWorld Greetings"
-        Settings.RegisterAddOnCategory(category)
-    else
-        -- Fallback for older versions
-        InterfaceOptions_AddCategory(panel)
-    end
+    -- Make bg clickable
+    bg:EnableMouse(true)
+    bg:SetScript("OnMouseDown", function() editBox:SetFocus() end)
 
-    initialized = true
+    -- Return the new yOffset (height of the controls we added)
+    return yOffset - 90
 end
 
--- Function to open the settings panel
-function Settings.OpenSettings()
-    if not initialized then
-        Settings.Initialize()
-    end
+-- Legacy support (keep definitions but don't auto-initialize standalone panel)
+function Settings.Initialize()
+    -- No longer creates a standalone panel
+end
 
-    if Settings and Settings.OpenToCategory then
-        Settings.OpenToCategory("HelloWorld Greetings")
-    else
-        InterfaceOptionsFrame_OpenToCategory(panel)
+function Settings.OpenSettings()
+    -- Redirect to main hub if possible
+    if _G.Settings and _G.Settings.OpenToCategory then
+        _G.Settings.OpenToCategory("Fuloh's QoL")
     end
 end
 

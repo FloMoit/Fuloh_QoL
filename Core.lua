@@ -301,7 +301,7 @@ local function ShowHelp()
     Print("Feature commands:")
 
     for name, feature in pairs(QoL.RegisteredFeatures) do
-        Print("  /fuloh " .. feature.shortcut .. " - " .. name .. " commands")
+        Print("  /fuloh " .. feature.shortcut .. " - " .. (feature.label or name) .. " commands")
     end
 end
 
@@ -311,7 +311,7 @@ local function ShowFeatureList()
     for name, feature in pairs(QoL.RegisteredFeatures) do
         local enabled = Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled
         local status = enabled and COLOR_SUCCESS .. "Enabled" or COLOR_ERROR .. "Disabled"
-        Print("  " .. name .. " [" .. feature.shortcut .. "] - " .. status .. COLOR_RESET)
+        Print("  " .. (feature.label or name) .. " [" .. feature.shortcut .. "] - " .. status .. COLOR_RESET)
     end
 end
 
@@ -405,13 +405,22 @@ local function RegisterSettings()
     -- Now create feature checkboxes
     local yOffset = -60
 
-    for name, feature in pairs(QoL.RegisteredFeatures) do
+    -- Sort features by name for consistent UI
+    local sortedFeatureNames = {}
+    for name in pairs(QoL.RegisteredFeatures) do
+        table.insert(sortedFeatureNames, name)
+    end
+    table.sort(sortedFeatureNames)
+
+    for _, name in ipairs(sortedFeatureNames) do
+        local feature = QoL.RegisteredFeatures[name]
+        local featureLabel = feature.label or feature.name
         -- Create checkbox using Settings API
         local checkboxSetting = Settings.RegisterProxySetting(
             settingsCategory,
             name .. "_Enabled",
             Settings.VarType.Boolean,
-            feature.name,
+            featureLabel,
             Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or true,
             function() return Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled end,
             function(value)
@@ -429,7 +438,7 @@ local function RegisterSettings()
         -- Create checkbox frame manually for canvas layout
         local checkbox = CreateFrame("CheckButton", nil, panel, "InterfaceOptionsCheckButtonTemplate")
         checkbox:SetPoint("TOPLEFT", 20, yOffset)
-        checkbox.Text:SetText(feature.name)
+        checkbox.Text:SetText(featureLabel)
 
         -- Bind checkbox to setting
         checkbox:SetChecked(Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or true)
@@ -446,6 +455,14 @@ local function RegisterSettings()
         end)
 
         yOffset = yOffset - 30
+
+        -- Hook for additional settings
+        if type(feature.OnSettingsUI) == "function" then
+            local newY = feature:OnSettingsUI(panel, yOffset)
+            if newY then
+                yOffset = newY
+            end
+        end
     end
 end
 
