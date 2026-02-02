@@ -888,7 +888,6 @@ Report issues or request features at: [Your GitHub/Contact]
 ## Credits
 
 **Author:** Fuloh
-**Co-Author:** Claude Sonnet 4.5
 
 ## License
 
