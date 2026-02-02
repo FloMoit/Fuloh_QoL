@@ -1,0 +1,7 @@
+# Common WoW Addon temporary files
+*.bak
+*.tmp
+*.old
+
+# Agent-specific folders
+.gemini/
