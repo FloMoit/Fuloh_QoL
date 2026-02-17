@@ -3,5 +3,8 @@
 *.tmp
 *.old
 
+
 # Agent-specific folders
 .gemini/
+.agent/
+.cursorrules
