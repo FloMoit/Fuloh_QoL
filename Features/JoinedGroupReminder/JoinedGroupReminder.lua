@@ -12,10 +12,12 @@ end
 local JGR = {
     name = "JoinedGroupReminder",
     shortcut = "jgr",
+    isEnabled = false,
 }
 
 -- Store reference to Constants and UI namespaces (loaded before this file)
 local ns = {}
+local L = QoL.Features.JoinedGroupReminder_Constants.L
 
 -- State management (private to this feature)
 local applicationCache = {}
@@ -64,6 +66,7 @@ end
 
 -- Process application status updates
 local function OnLFGListApplicationStatusUpdated(searchResultID, newStatus, oldStatus, groupName)
+    if not JGR.isEnabled then return end
     DebugPrint("APPLICATION_STATUS_UPDATED - searchResultID:", searchResultID, "status:", newStatus)
 
     if newStatus == "applied" and searchResultID then
@@ -93,6 +96,7 @@ end
 
 -- Process joining a group
 local function OnLFGListJoinedGroup(searchResultID)
+    if not JGR.isEnabled then return end
     DebugPrint("JOINED_GROUP - searchResultID:", searchResultID)
 
     local cached = searchResultID and applicationCache[searchResultID]
@@ -124,7 +128,7 @@ local function OnLFGListJoinedGroup(searchResultID)
         DebugPrint("    activityID:", cached.activityID)
         DebugPrint("    activityName:", cached.activityName)
 
-        local activityName = cached.activityName or "LFG Group"
+        local activityName = cached.activityName or L["LFG Group"]
         local groupName = cached.groupName or ""
 
         DebugPrint("  Showing reminder - Activity:", activityName, "Group:", groupName)
@@ -145,30 +149,28 @@ local function OnLFGListJoinedGroup(searchResultID)
     end
 end
 
-local function OnChallengeModeStart()
-    ns.HideReminder(true)
-end
-
-local function OnChallengeModeCompleted()
-    ns.HideReminder(true)
-end
 
 local function OnGroupRosterUpdate()
+    if not JGR.isEnabled then return end
     local inGroup = IsInGroup()
 
     -- Detect leaving group
     if wasInGroup and not inGroup then
-        ns.HideReminder(true)
+        -- Only hide if not listing a group ourselves
+        if not C_LFGList.GetActiveEntryInfo() then
+            ns.HideReminder(true)
+        end
     end
 
     wasInGroup = inGroup
 end
 
 local function OnPlayerEnteringWorld(isInitialLogin, isReloadingUi)
+    if not JGR.isEnabled then return end
     wasInGroup = IsInGroup()
 
-    -- Restore reminder on reload if still in group
-    if isReloadingUi then
+    -- Restore reminder on login/reload if still in group
+    if isInitialLogin or isReloadingUi then
         local db = GetDB()
         if db.activeReminder then
             local data = db.activeReminder
@@ -200,25 +202,6 @@ local function SaveState()
     end
 end
 
--- Event dispatcher
-local function OnEvent(self, event, ...)
-    if event == "LFG_LIST_JOINED_GROUP" then
-        OnLFGListJoinedGroup(...)
-    elseif event == "LFG_LIST_APPLICATION_STATUS_UPDATED" then
-        OnLFGListApplicationStatusUpdated(...)
-    elseif event == "CHALLENGE_MODE_START" then
-        OnChallengeModeStart()
-    elseif event == "CHALLENGE_MODE_COMPLETED" then
-        OnChallengeModeCompleted()
-    elseif event == "GROUP_ROSTER_UPDATE" then
-        OnGroupRosterUpdate()
-    elseif event == "PLAYER_ENTERING_WORLD" then
-        OnPlayerEnteringWorld(...)
-    elseif event == "PLAYER_LOGOUT" then
-        SaveState()
-    end
-end
-
 -- Update from currently active LFG entry (if we are listing a group)
 local function UpdateFromActiveEntry()
     local entryInfo = C_LFGList.GetActiveEntryInfo()
@@ -228,7 +211,7 @@ local function UpdateFromActiveEntry()
             activityID = entryInfo.activityIDs[1]
         end
 
-        local activityName = GetActivityName(activityID) or "LFG Group"
+        local activityName = GetActivityName(activityID) or L["LFG Group"]
         local groupName = entryInfo.name or ""
 
         currentReminderData = {
@@ -239,6 +222,40 @@ local function UpdateFromActiveEntry()
     end
     return false
 end
+
+-- Event dispatcher
+local function OnEvent(self, event, ...)
+    if event == "LFG_LIST_JOINED_GROUP" then
+        OnLFGListJoinedGroup(...)
+    elseif event == "LFG_LIST_APPLICATION_STATUS_UPDATED" then
+        OnLFGListApplicationStatusUpdated(...)
+    elseif event == "LFG_LIST_ACTIVE_ENTRY_UPDATE" then
+        if UpdateFromActiveEntry() then
+            ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
+        end
+    elseif event == "GROUP_ROSTER_UPDATE" then
+        OnGroupRosterUpdate()
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        -- Check active entry first (more accurate if we are the leader)
+        if UpdateFromActiveEntry() then
+            ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
+        else
+            OnPlayerEnteringWorld(...)
+        end
+    elseif event == "PLAYER_LOGOUT" then
+        SaveState()
+    end
+end
+
+-- Static event registration for 12.0 security
+eventFrame:SetScript("OnEvent", OnEvent)
+eventFrame:RegisterEvent("LFG_LIST_JOINED_GROUP")
+eventFrame:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED")
+eventFrame:RegisterEvent("LFG_LIST_ACTIVE_ENTRY_UPDATE")
+
+eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+eventFrame:RegisterEvent("PLAYER_LOGOUT")
 
 --------------------------------------------------------------------------------
 -- Feature API Implementation
@@ -261,6 +278,7 @@ function JGR:Initialize()
     -- Hook ApplyToGroup once (global hook, not tied to enable/disable)
     if not applyToGroupHooked then
         hooksecurefunc(C_LFGList, "ApplyToGroup", function(searchResultID)
+            if not JGR.isEnabled then return end
             DebugPrint("HOOK: ApplyToGroup - searchResultID:", searchResultID)
 
             local info = C_LFGList.GetSearchResultInfo(searchResultID)
@@ -303,24 +321,13 @@ function JGR:Initialize()
 end
 
 function JGR:Enable()
-    -- Register all events
-    eventFrame:SetScript("OnEvent", OnEvent)
-    eventFrame:RegisterEvent("LFG_LIST_JOINED_GROUP")
-    eventFrame:RegisterEvent("LFG_LIST_APPLICATION_STATUS_UPDATED")
-    eventFrame:RegisterEvent("CHALLENGE_MODE_START")
-    eventFrame:RegisterEvent("CHALLENGE_MODE_COMPLETED")
-    eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-    eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    eventFrame:RegisterEvent("PLAYER_LOGOUT")
-
+    self.isEnabled = true
     -- Restore state if reloading
     OnPlayerEnteringWorld(false, true)
 end
 
 function JGR:Disable()
-    -- Unregister all events
-    eventFrame:UnregisterAllEvents()
-    eventFrame:SetScript("OnEvent", nil)
+    self.isEnabled = false
 
     -- Hide reminder if shown
     if ns.HideReminder then
@@ -330,7 +337,7 @@ end
 
 function JGR:GetDefaults()
     return {
-        enabled = true,
+        enabled = false,
         activeReminder = nil,
         position = nil,
     }
@@ -357,7 +364,7 @@ function JGR:HandleCommand(args)
     elseif cmd == "show" then
         if UpdateFromActiveEntry() then
             ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
-            print("|cff00ff00[JGR]|r Reminder updated from active LFG listing.")
+            print("|cff00ff00[JGR]|r Reminder updated from active LFG entry.")
         elseif currentReminderData then
             ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
             print("|cff00ff00[JGR]|r Reminder restored from last joined group.")

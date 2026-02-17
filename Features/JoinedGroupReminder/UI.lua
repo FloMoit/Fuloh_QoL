@@ -11,6 +11,7 @@ end
 -- Get Constants (loaded before this file)
 local UI = QoL.Features.JoinedGroupReminder_Constants.UI
 local FONTS = QoL.Features.JoinedGroupReminder_Constants.FONTS
+local L = QoL.Features.JoinedGroupReminder_Constants.L
 
 -- Main frame reference
 local reminderFrame = nil
@@ -64,15 +65,15 @@ local function CreateReminderFrame()
     -- Left accent bar
     local accentBar = frame:CreateTexture(nil, "ARTWORK")
     accentBar:SetTexture("Interface\\Buttons\\WHITE8x8")
-    accentBar:SetSize(4, UI.HEIGHT - 2)
+    accentBar:SetSize(6, UI.HEIGHT - 2)
     accentBar:SetPoint("LEFT", frame, "LEFT", 1, 0)
     accentBar:SetVertexColor(0.9, 0.7, 0.2, 0.8)
     frame.accentBar = accentBar
 
     -- Teleport button (left side, after accent bar)
     local teleportBtn = CreateFrame("Button", nil, frame, "SecureActionButtonTemplate")
-    teleportBtn:SetSize(32, 32)
-    teleportBtn:SetPoint("LEFT", frame, "LEFT", 12, 0)
+    teleportBtn:SetSize(UI.ICON_SIZE, UI.ICON_SIZE)
+    teleportBtn:SetPoint("LEFT", frame, "LEFT", 18, 0)
     teleportBtn:RegisterForClicks("AnyUp", "AnyDown")
     teleportBtn:Hide()
 
@@ -95,7 +96,7 @@ local function CreateReminderFrame()
             GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
             GameTooltip:SetSpellByID(self.spellID)
             GameTooltip:AddLine(" ")
-            GameTooltip:AddLine("Click to teleport", 0.5, 0.5, 0.5)
+            GameTooltip:AddLine(L["Click to teleport"], 0.5, 0.5, 0.5)
             GameTooltip:Show()
         end
     end)
@@ -108,34 +109,34 @@ local function CreateReminderFrame()
 
     -- Text container (adjusts based on teleport button visibility)
     local textContainer = CreateFrame("Frame", nil, frame)
-    textContainer:SetPoint("LEFT", frame, "LEFT", 12, 0)
-    textContainer:SetPoint("RIGHT", frame, "RIGHT", -28, 0)
+    textContainer:SetPoint("LEFT", frame, "LEFT", 18, 0)
+    textContainer:SetPoint("RIGHT", frame, "RIGHT", -42, 0)
     textContainer:SetPoint("TOP", frame, "TOP", 0, 0)
     textContainer:SetPoint("BOTTOM", frame, "BOTTOM", 0, 0)
     frame.textContainer = textContainer
 
     -- Dungeon name (main text, centered)
     local dungeonText = textContainer:CreateFontString(nil, "OVERLAY", FONTS.DUNGEON)
-    dungeonText:SetPoint("CENTER", textContainer, "CENTER", 0, 6)
+    dungeonText:SetPoint("CENTER", textContainer, "CENTER", 0, 10)
     dungeonText:SetTextColor(unpack(UI.DUNGEON_TEXT_COLOR))
     dungeonText:SetJustifyH("CENTER")
-    dungeonText:SetWidth(UI.WIDTH - 80)
+    dungeonText:SetWidth(UI.WIDTH - 120)
     dungeonText:SetMaxLines(1)
     frame.dungeonText = dungeonText
 
     -- Group name subtitle
-    local groupText = textContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    groupText:SetPoint("TOP", dungeonText, "BOTTOM", 0, -2)
+    local groupText = textContainer:CreateFontString(nil, "OVERLAY", FONTS.GROUP)
+    groupText:SetPoint("TOP", dungeonText, "BOTTOM", 0, -4)
     groupText:SetTextColor(unpack(UI.GROUP_TEXT_COLOR))
     groupText:SetJustifyH("CENTER")
-    groupText:SetWidth(UI.WIDTH - 80)
+    groupText:SetWidth(UI.WIDTH - 120)
     groupText:SetMaxLines(1)
     frame.groupText = groupText
 
     -- Close button (right side)
     local closeBtn = CreateFrame("Button", nil, frame)
-    closeBtn:SetSize(20, 20)
-    closeBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4)
+    closeBtn:SetSize(UI.CLOSE_BUTTON_SIZE, UI.CLOSE_BUTTON_SIZE)
+    closeBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -6, -6)
 
     local closeBtnBg = closeBtn:CreateTexture(nil, "BACKGROUND")
     closeBtnBg:SetAllPoints()
@@ -147,7 +148,7 @@ local function CreateReminderFrame()
     closeBtnText:SetPoint("CENTER", 0, 0)
     closeBtnText:SetText("×")
     closeBtnText:SetTextColor(0.7, 0.7, 0.7)
-    closeBtnText:SetFont(closeBtnText:GetFont(), 16)
+    closeBtnText:SetFont(closeBtnText:GetFont(), 24)
     closeBtn.text = closeBtnText
 
     closeBtn:SetScript("OnEnter", function(self)
@@ -161,7 +162,7 @@ local function CreateReminderFrame()
     end)
 
     closeBtn:SetScript("OnClick", function()
-        QoL.Features.JoinedGroupReminder_HideReminder()
+        QoL.Features.JoinedGroupReminder_HideReminder(true)
     end)
 
     frame.closeBtn = closeBtn
@@ -199,7 +200,7 @@ local function ShowReminder(dungeonName, groupName)
         reminderFrame = CreateReminderFrame()
     end
 
-    reminderFrame.dungeonText:SetText(dungeonName or "Unknown Dungeon")
+    reminderFrame.dungeonText:SetText(dungeonName or L["Unknown Dungeon"])
     if groupName and groupName ~= "" then
         reminderFrame.groupText:SetText(groupName)
     else
@@ -227,10 +228,10 @@ local function ShowReminder(dungeonName, groupName)
         end
 
         teleportBtn:Show()
-        textContainer:SetPoint("LEFT", reminderFrame, "LEFT", 48, 0)
+        textContainer:SetPoint("LEFT", reminderFrame, "LEFT", 72, 0)
     else
         teleportBtn:Hide()
-        textContainer:SetPoint("LEFT", reminderFrame, "LEFT", 12, 0)
+        textContainer:SetPoint("LEFT", reminderFrame, "LEFT", 18, 0)
     end
 
     -- Reset alpha for fade-in

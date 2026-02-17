@@ -21,7 +21,11 @@ function Settings.CreateEmbeddedSettings(parent, yOffset)
     local xOffset = 40
     
     local label = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    label:SetText("Greeting Messages (one per line):")
+    local labelText = "Greeting Messages (one per line):"
+    if GetLocale() == "frFR" then
+        labelText = "Messages de salutation (un par ligne) :"
+    end
+    label:SetText(labelText)
     label:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, yOffset - 5)
     
     yOffset = yOffset - 25

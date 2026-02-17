@@ -1,8 +1,10 @@
 ## Interface: 120000, 120001
 ## Title: Fuloh's QoL
 ## Author: Fuloh
-## Version: 1.0.0
-## Notes: Consolidated QoL features
+## Version: 1.1.0
+## Notes: Modular QoL hub. Features: Joined Group Reminder & Hello World.
+## Notes-frFR: Hub de fonctionnalités QoL. Inclut : Rappel de groupe rejoint & Auto-salutations.
+## IconTexture: Interface\AddOns\Fuloh_QoL\icon.tga
 ## SavedVariables: Fuloh_QoLDB
 
 Core.lua
@@ -10,6 +12,7 @@ Features\JoinedGroupReminder\Constants.lua
 Features\JoinedGroupReminder\UI.lua
 Features\JoinedGroupReminder\JoinedGroupReminder.lua
 Features\HelloWorld\Utils.lua
-Features\HelloWorld\UI.lua
+
 Features\HelloWorld\Settings.lua
 Features\HelloWorld\HelloWorld.lua
+

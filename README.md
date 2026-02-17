@@ -2,6 +2,12 @@
 
 A consolidated addon for World of Warcraft that combines multiple QoL features into a single, manageable hub with per-feature toggles.
 
+## 📚 Context7 Documentation
+This project is configured to use **Context7** for up-to-date WoW API documentation.
+- **Workflow:** See [.agent/workflows/use-wow-api-context7.md](.agent/workflows/use-wow-api-context7.md) for usage.
+- **Prompting:** Use the phrase `use context7` or `use library wowwiki-archive_fandom_wiki_world_of_warcraft_api` in your prompts to trigger live documentation lookups.
+- **API Key:** Pre-configured in [.cursorrules](.cursorrules).
+
 ## Table of Contents
 - [Features](#features)
 - [Installation](#installation)
@@ -43,7 +49,7 @@ Automatically greets party members when joining a group with customizable greeti
 - Random greeting selection from custom list
 - Natural delay (4-6 seconds) before greeting
 - Smart channel detection (PARTY vs INSTANCE_CHAT)
-- Minimap button for quick toggle
+
 - Customizable greeting messages
 
 ---
@@ -93,7 +99,7 @@ If you previously used `JoinedGroupReminder` or `HelloWorld` as standalone addon
 
 **HelloWorld:**
 - Custom greeting messages
-- Minimap button position
+
 - Enabled/disabled state
 
 ### Uninstalling
@@ -135,7 +141,7 @@ To completely remove Fuloh_QoL:
 ┌───▼────────────────┐  ┌─────────▼─────────────┐
 │ JoinedGroupReminder│  │     HelloWorld        │
 │  - Constants.lua   │  │  - Utils.lua          │
-│  - UI.lua          │  │  - UI.lua             │
+│  - UI.lua          │  
 │  - JoinedGroup...  │  │  - Settings.lua       │
 │                    │  │  - HelloWorld.lua     │
 └────────────────────┘  └───────────────────────┘
@@ -172,7 +178,7 @@ Fuloh_QoLDB = {
 
     HelloWorld = {
         enabled = true,
-        minimapPos = 45,
+
         greetings = { "o/", "Hey!", ... },
     },
 }

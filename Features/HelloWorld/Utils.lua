@@ -18,12 +18,22 @@ Utils.DefaultGreetings = {
     "Hello!",
 }
 
+if GetLocale() == "frFR" then
+    Utils.DefaultGreetings = {
+        "Salut !",
+        "Bonjour !",
+        "Coucou !",
+        "Plop !",
+    }
+end
+
 --- Determines if and where the addon should send a greeting
 -- @param oldState table - { inHome: boolean, inInst: boolean, numMembers: number }
 -- @param newState table - { inHome: boolean, inInst: boolean, numMembers: number }
 -- @param enabled boolean - whether the addon is enabled
+-- @param isLFGJoin boolean - whether the update was triggered by an LFG group join event
 -- @return string|nil - The chat channel to use, or nil if shouldn't greet
-function Utils.GetGreetingChannel(oldState, newState, enabled)
+function Utils.GetGreetingChannel(oldState, newState, enabled, isLFGJoin)
     if not enabled then return nil end
 
     local isSolo = (newState.numMembers or 0) <= 1
@@ -32,17 +42,18 @@ function Utils.GetGreetingChannel(oldState, newState, enabled)
     -- Trigger conditions:
     -- 1. We just joined a group category (Home or Instance)
     -- 2. We were a "group of 1" and someone else joined
+    -- 3. Explicit LFG join event (even if already in a group)
     local groupJoined = newState.inHome and not oldState.inHome
     local instJoined = newState.inInst and not oldState.inInst
     local firstMemberJoined = (newState.numMembers or 0) > 1 and (oldState.numMembers or 0) <= 1
 
     -- Priority 1: Instance Chat (LFG, BGs, LFR)
-    if instJoined or (newState.inInst and firstMemberJoined) then
+    if instJoined or (newState.inInst and (firstMemberJoined or isLFGJoin)) then
         return "INSTANCE_CHAT"
     end
 
     -- Priority 2: Party Chat (Manual group)
-    if groupJoined or firstMemberJoined then
+    if groupJoined or firstMemberJoined or isLFGJoin then
         -- Don't double-greet if we are already in an instance
         if newState.inInst then return nil end
         -- Don't greet in manual raids unless it's a BG (handled by inInst check above)

@@ -13,11 +13,14 @@ local HelloWorld = {
     name = "HelloWorld",
     label = "Auto greeting in party",
     shortcut = "hello",
+    isEnabled = false,
 }
 
 -- State management (private to this feature)
 local state = { inHome = false, inInst = false, numMembers = 0 }
 local eventFrame = CreateFrame("Frame")
+local pendingLFGJoin = false
+
 
 -- Database accessor
 local function GetDB()
@@ -45,6 +48,8 @@ end
 
 -- Handle group roster changes
 local function OnGroupRosterUpdate()
+    if not HelloWorld.isEnabled then return end
+    
     local oldState = {
         inHome = state.inHome,
         inInst = state.inInst,
@@ -56,13 +61,21 @@ local function OnGroupRosterUpdate()
     local Utils = QoL.Features.HelloWorld_Utils
 
     -- Check if we should greet and which channel to use
-    local channel = Utils and Utils.GetGreetingChannel(oldState, state, db.enabled)
+    local channel = Utils and Utils.GetGreetingChannel(oldState, state, true, pendingLFGJoin)
+    
+    -- Clear the flag after checking
+    if pendingLFGJoin then
+        pendingLFGJoin = false
+    end
 
     if channel then
         -- Multi-second delay (4 to 6 seconds) to make it look natural
         local delay = math.random(40, 60) / 10
 
         C_Timer.After(delay, function()
+            -- Final check before sending if still enabled
+            if not HelloWorld.isEnabled then return end
+            
             -- Use pcall to safely handle chat errors (throttling, silence, etc.)
             local success, err = pcall(function()
                 local message = GetRandomGreeting()
@@ -78,10 +91,21 @@ end
 
 -- Event dispatcher
 local function OnEvent(self, event, ...)
+    if not HelloWorld.isEnabled then return end
+    
     if event == "GROUP_ROSTER_UPDATE" or event == "PLAYER_ENTERING_WORLD" then
+        OnGroupRosterUpdate()
+    elseif event == "LFG_LIST_JOINED_GROUP" then
+        pendingLFGJoin = true
         OnGroupRosterUpdate()
     end
 end
+
+-- Static event registration for 12.0 security
+eventFrame:SetScript("OnEvent", OnEvent)
+eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+eventFrame:RegisterEvent("LFG_LIST_JOINED_GROUP")
 
 --------------------------------------------------------------------------------
 -- Feature API Implementation
@@ -94,42 +118,24 @@ function HelloWorld:Initialize()
         Settings.Initialize()
     end
 
-    -- Create minimap button
-    local UI = QoL.Features.HelloWorld_UI
-    if UI and UI.CreateMinimapButton then
-        UI.CreateMinimapButton()
-    end
 
     -- Initialize group state
     UpdateGroupState()
 end
 
 function HelloWorld:Enable()
-    -- Register events
-    eventFrame:SetScript("OnEvent", OnEvent)
-    eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
-    eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
+    self.isEnabled = true
 
-    -- Update UI
-    local UI = QoL.Features.HelloWorld_UI
-    if UI and UI.UpdateVisual then
-        UI.UpdateVisual()
-    end
+
 
     -- Update group state
     UpdateGroupState()
 end
 
 function HelloWorld:Disable()
-    -- Unregister events
-    eventFrame:UnregisterAllEvents()
-    eventFrame:SetScript("OnEvent", nil)
+    self.isEnabled = false
 
-    -- Update UI
-    local UI = QoL.Features.HelloWorld_UI
-    if UI and UI.UpdateVisual then
-        UI.UpdateVisual()
-    end
+
 end
 
 function HelloWorld:GetDefaults()
@@ -143,8 +149,8 @@ function HelloWorld:GetDefaults()
     end
 
     return {
-        enabled = true,
-        minimapPos = 45,
+        enabled = false,
+
         greetings = defaultGreetings,
     }
 end

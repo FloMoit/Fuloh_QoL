@@ -16,6 +16,9 @@ local eventFrame = CreateFrame("Frame")
 -- Migration flag (set to true after first migration)
 local MIGRATION_COMPLETE_KEY = "_migrationComplete"
 
+-- Settings Category (stored for access by slash command)
+local settingsCategory = nil
+
 -- Color codes for consistent messaging
 local COLOR_PREFIX = "|cff00bfff"  -- Light blue
 local COLOR_ERROR = "|cffff4444"   -- Red
@@ -256,7 +259,7 @@ local function InitializeDatabase()
 
         -- Ensure enabled flag exists (default to true)
         if Fuloh_QoLDB[name].enabled == nil then
-            Fuloh_QoLDB[name].enabled = true
+            Fuloh_QoLDB[name].enabled = false
         end
     end
 end
@@ -350,7 +353,18 @@ SLASH_FULOH1 = "/fuloh"
 SlashCmdList["FULOH"] = function(msg)
     msg = strtrim(msg or "")
 
-    if msg == "" or msg == "help" then
+    if msg == "" then
+        -- Open options if available
+        if settingsCategory and Settings and Settings.OpenToCategory then
+            local categoryID = settingsCategory.GetID and settingsCategory:GetID() or settingsCategory.ID
+            Settings.OpenToCategory(categoryID)
+        else
+            ShowHelp()
+        end
+        return
+    end
+
+    if msg == "help" then
         ShowHelp()
         return
     end
@@ -374,7 +388,7 @@ end
 -- Settings UI Registration
 --------------------------------------------------------------------------------
 
-local settingsCategory = nil
+
 
 local function RegisterSettings()
     -- Use modern Settings API (Dragonflight/TWW)
@@ -399,7 +413,6 @@ local function RegisterSettings()
 
     -- Register category FIRST
     settingsCategory = Settings.RegisterCanvasLayoutCategory(panel, "Fuloh's QoL")
-    settingsCategory.ID = "Fuloh's QoL"
     Settings.RegisterAddOnCategory(settingsCategory)
 
     -- Now create feature checkboxes
@@ -421,7 +434,7 @@ local function RegisterSettings()
             name .. "_Enabled",
             Settings.VarType.Boolean,
             featureLabel,
-            Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or true,
+            Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or false,
             function() return Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled end,
             function(value)
                 Fuloh_QoLDB[name] = Fuloh_QoLDB[name] or {}
@@ -441,7 +454,7 @@ local function RegisterSettings()
         checkbox.Text:SetText(featureLabel)
 
         -- Bind checkbox to setting
-        checkbox:SetChecked(Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or true)
+        checkbox:SetChecked(Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or false)
         checkbox:SetScript("OnClick", function(self)
             local isChecked = self:GetChecked()
             Fuloh_QoLDB[name] = Fuloh_QoLDB[name] or {}
