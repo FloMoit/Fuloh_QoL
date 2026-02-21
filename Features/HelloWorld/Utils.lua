@@ -48,12 +48,12 @@ function Utils.GetGreetingChannel(oldState, newState, enabled, isLFGJoin)
     local firstMemberJoined = (newState.numMembers or 0) > 1 and (oldState.numMembers or 0) <= 1
 
     -- Priority 1: Instance Chat (LFG, BGs, LFR)
-    if instJoined or (newState.inInst and (firstMemberJoined or isLFGJoin)) then
+    if instJoined or (newState.inInst and firstMemberJoined) then
         return "INSTANCE_CHAT"
     end
 
     -- Priority 2: Party Chat (Manual group)
-    if groupJoined or firstMemberJoined or isLFGJoin then
+    if groupJoined or firstMemberJoined then
         -- Don't double-greet if we are already in an instance
         if newState.inInst then return nil end
         -- Don't greet in manual raids unless it's a BG (handled by inInst check above)

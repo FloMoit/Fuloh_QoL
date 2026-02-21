@@ -16,3 +16,7 @@ Features\HelloWorld\Utils.lua
 Features\HelloWorld\Settings.lua
 Features\HelloWorld\HelloWorld.lua
 
+Features\GGGuys\Utils.lua
+Features\GGGuys\Settings.lua
+Features\GGGuys\GGGuys.lua
+

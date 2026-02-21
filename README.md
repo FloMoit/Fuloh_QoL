@@ -893,8 +893,7 @@ Report issues or request features at: [Your GitHub/Contact]
 
 ## Credits
 
-**Author:** Fuloh
+**Author:** Fuloh (with lots of AI help)
 
 ## License
 
-[Your License Here]
