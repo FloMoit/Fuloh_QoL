@@ -51,8 +51,14 @@ local function OnEvent(self, event, ...)
             if not GGGuys.isEnabled then return end
 
             -- Check completion info NOW (after delay) to ensure data is populated
-            -- mapChallengeModeID, level, time, onTime, keystoneUpgradeLevels...
-            local _, _, _, onTime = C_ChallengeMode.GetCompletionInfo()
+            local onTime = false
+            if C_ChallengeMode.GetChallengeCompletionInfo then
+                local info = C_ChallengeMode.GetChallengeCompletionInfo()
+                if info then onTime = info.onTime end
+            elseif C_ChallengeMode.GetCompletionInfo then
+                local _, _, _, isTimeScore = C_ChallengeMode.GetCompletionInfo()
+                onTime = isTimeScore
+            end
 
             if onTime then
                 local msg = GetRandomMessage()
