@@ -19,6 +19,12 @@ Automate your social interactions without sounding like a bot.
 *   **Smart Channels:** Intelligently switches between Party and Instance chat.
 *   **Customizable:** Define your own list of random greetings.
 
+### 🏁 Auto GG (GGGuys)
+Celebrate your timed keys with the group effortlessly.
+*   **Auto-Congratulate:** Automatically says "GG" in party chat when a Mythic+ dungeon is completed in time.
+*   **Human-like Reaction:** Includes a natural, randomized delay (4-6 seconds) after the key completion before sending the message.
+*   **Customizable:** Define your own list of random congratulations messages to cycle through.
+
 ## Why Use Fuloh's QoL?
 *   **Modular Design:** Enable only the features you need via the centralized settings panel. **All features are disabled by default** so you have full control.
 *   **Localized:** Fully translated into French (frFR) including dungeon names and UI text.
