@@ -19,5 +19,3 @@ Features\HelloWorld\HelloWorld.lua
 Features\GGGuys\Utils.lua
 Features\GGGuys\Settings.lua
 Features\GGGuys\GGGuys.lua
-
-Features\RotationMarker\RotationMarker.lua

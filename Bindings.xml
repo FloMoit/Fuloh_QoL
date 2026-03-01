@@ -1,7 +1,0 @@
-<Bindings>
-    <!-- Fuloh's QoL Bindings -->
-    <Binding name="CLICK FulohQoL_RotationMarker_CycleBtn:LeftButton" header="FULOH_QOL_HEADER">
-    </Binding>
-    <Binding name="CLICK FulohQoL_RotationMarker_ClearBtn:LeftButton">
-    </Binding>
-</Bindings>
