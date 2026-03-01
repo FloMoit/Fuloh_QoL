@@ -7,10 +7,20 @@ if not QoL then
     return
 end
 
-local RotationMarker = {}
+-- Create feature object
+local RotationMarker = {
+    name = "RotationMarker",
+    label = "Rotation Marker (@Cursor)",
+    shortcut = "rmarker",
+    isEnabled = false,
+}
 
--- Create the buttons and setup bindings
-function RotationMarker.Initialize()
+if GetLocale() == "frFR" then
+    RotationMarker.label = "Marqueur de Rotation (@Curseur)"
+end
+
+-- Initialize the protected interface buttons
+function RotationMarker:Initialize()
     -- Set up global bindings names for localization in the Key Bindings menu
     _G.BINDING_HEADER_FULOH_QOL_HEADER = "Fuloh's QoL"
     _G.BINDING_NAME_FULOH_QOL_ROTATION_MARKER_CYCLE = "Cycle World Marker (@Cursor)"
@@ -55,8 +65,133 @@ function RotationMarker.Initialize()
     ]])
 end
 
--- Export module
-QoL.Features.RotationMarker = RotationMarker
+function RotationMarker:Enable()
+    self.isEnabled = true
+end
 
--- Auto-initialize when file loads
-RotationMarker.Initialize()
+function RotationMarker:Disable()
+    self.isEnabled = false
+end
+
+function RotationMarker:GetDefaults()
+    return { enabled = true }
+end
+
+function RotationMarker:HandleCommand(args)
+    local cmd = args:lower():match("^(%S+)") or args:lower()
+
+    if cmd == "toggle" then
+        QoL:ToggleFeature("RotationMarker")
+    elseif cmd == "help" then
+        print("|cff00ff00[RotationMarker]|r Commands:")
+        print("  /fuloh rmarker toggle - Toggle feature on/off")
+        print("  /fuloh rmarker help - Show this help message")
+    else
+        print("|cff00ff00[RotationMarker]|r: Unknown command. Type /fuloh rmarker help for commands.")
+    end
+end
+
+-- Inject into the Settings Panel
+function RotationMarker:OnSettingsUI(parent, yOffset)
+    local xOffset = 40
+    
+    local function CreateKeybindButton(labelTxt, commandName, currentY)
+        local label = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+        label:SetText(labelTxt)
+        label:SetPoint("TOPLEFT", parent, "TOPLEFT", xOffset, currentY)
+        
+        local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+        button:SetSize(200, 22)
+        button:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -5)
+        
+        local currentBinding = GetBindingKey(commandName)
+        button:SetText(currentBinding and GetBindingText(currentBinding) or "Not Bound")
+        
+        button:SetScript("OnClick", function(self)
+            if InCombatLockdown() then
+                print("|cffff4444[Fuloh QoL] Cannot change keybindings during combat.|r")
+                return
+            end
+            
+            self:EnableKeyboard(true)
+            self:SetText("Press key to bind...")
+        end)
+        
+        button:SetScript("OnKeyDown", function(self, key)
+            if key == "UNKNOWN" then return end
+            
+            if key == "ESCAPE" then
+                self:EnableKeyboard(false)
+                local b = GetBindingKey(commandName)
+                self:SetText(b and GetBindingText(b) or "Not Bound")
+                return
+            end
+            
+            -- Ignore modifier keys on their own
+            if key == "LSHIFT" or key == "RSHIFT" or key == "LCTRL" or key == "RCTRL" or key == "LALT" or key == "RALT" or key == "META" then
+                return
+            end
+
+            local prefix = ""
+            if IsAltKeyDown() then prefix = prefix .. "ALT-" end
+            if IsControlKeyDown() then prefix = prefix .. "CTRL-" end
+            if IsShiftKeyDown() then prefix = prefix .. "SHIFT-" end
+            
+            local finalKey = prefix .. key
+
+            if InCombatLockdown() then
+                self:EnableKeyboard(false)
+                local b = GetBindingKey(commandName)
+                self:SetText(b and GetBindingText(b) or "Not Bound")
+                print("|cffff4444[Fuloh QoL] Cannot change keybindings during combat.|r")
+                return
+            end
+
+            -- Clear old binding assignment from this specific command
+            local oldKeys = {GetBindingKey(commandName)}
+            for _, oldKey in ipairs(oldKeys) do
+                SetBinding(oldKey)
+            end
+            
+            -- Unbind anything that previously used to be attached to this specific finalKey to prevent collision
+            local oldCommandAssignedToFinalKey = GetBindingAction(finalKey)
+            if oldCommandAssignedToFinalKey and oldCommandAssignedToFinalKey ~= "" then
+                SetBinding(finalKey)
+            end
+            
+            -- Bind new key
+            SetBinding(finalKey, commandName)
+            SaveBindings(GetCurrentBindingSet())
+            
+            self:EnableKeyboard(false)
+            self:SetText(GetBindingText(finalKey))
+        end)
+        
+        -- Also unfocus if we click away or lose focus
+        button:SetScript("OnHide", function(self)
+            self:EnableKeyboard(false)
+            local current = GetBindingKey(commandName)
+            self:SetText(current and GetBindingText(current) or "Not Bound")
+        end)
+        
+        return currentY - 50
+    end
+    
+    yOffset = CreateKeybindButton(
+        GetLocale() == "frFR" and "Raccourci - Faire défiler" or "Cycle Marker Keybind",
+        "FULOH_QOL_ROTATION_MARKER_CYCLE",
+        yOffset - 10
+    )
+    
+    yOffset = CreateKeybindButton(
+        GetLocale() == "frFR" and "Raccourci - Effacer" or "Clear Markers Keybind",
+        "FULOH_QOL_ROTATION_MARKER_CLEAR",
+        yOffset
+    )
+    
+    return yOffset - 10
+end
+
+-- Export module and register feature
+QoL.Features.RotationMarker = RotationMarker
+QoL:RegisterFeature(RotationMarker)
