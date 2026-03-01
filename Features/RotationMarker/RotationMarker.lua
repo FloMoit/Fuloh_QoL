@@ -23,12 +23,12 @@ end
 function RotationMarker:Initialize()
     -- Set up global bindings names for localization in the Key Bindings menu
     _G.BINDING_HEADER_FULOH_QOL_HEADER = "Fuloh's QoL"
-    _G.BINDING_NAME_FULOH_QOL_ROTATION_MARKER_CYCLE = "Cycle World Marker (@Cursor)"
-    _G.BINDING_NAME_FULOH_QOL_ROTATION_MARKER_CLEAR = "Clear All World Markers"
+    _G["BINDING_NAME_CLICK FulohQoL_RotationMarker_CycleBtn:LeftButton"] = "Cycle World Marker (@Cursor)"
+    _G["BINDING_NAME_CLICK FulohQoL_RotationMarker_ClearBtn:LeftButton"] = "Clear All World Markers"
     
     if GetLocale() == "frFR" then
-        _G.BINDING_NAME_FULOH_QOL_ROTATION_MARKER_CYCLE = "Faire défiler les marqueurs de monde (@Curseur)"
-        _G.BINDING_NAME_FULOH_QOL_ROTATION_MARKER_CLEAR = "Effacer tous les marqueurs de monde"
+        _G["BINDING_NAME_CLICK FulohQoL_RotationMarker_CycleBtn:LeftButton"] = "Faire défiler les marqueurs de monde (@Curseur)"
+        _G["BINDING_NAME_CLICK FulohQoL_RotationMarker_ClearBtn:LeftButton"] = "Effacer tous les marqueurs de monde"
     end
 
     -- 1. Create the Clear Button
@@ -179,13 +179,13 @@ function RotationMarker:OnSettingsUI(parent, yOffset)
     
     yOffset = CreateKeybindButton(
         GetLocale() == "frFR" and "Raccourci - Faire défiler" or "Cycle Marker Keybind",
-        "FULOH_QOL_ROTATION_MARKER_CYCLE",
+        "CLICK FulohQoL_RotationMarker_CycleBtn:LeftButton",
         yOffset - 10
     )
     
     yOffset = CreateKeybindButton(
         GetLocale() == "frFR" and "Raccourci - Effacer" or "Clear Markers Keybind",
-        "FULOH_QOL_ROTATION_MARKER_CLEAR",
+        "CLICK FulohQoL_RotationMarker_ClearBtn:LeftButton",
         yOffset
     )
     
