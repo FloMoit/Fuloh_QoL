@@ -1,0 +1,9 @@
+<Bindings>
+    <!-- Fuloh's QoL Bindings -->
+    <Binding name="FULOH_QOL_ROTATION_MARKER_CYCLE" header="FULOH_QOL_HEADER">
+        CLICK FulohQoL_RotationMarker_CycleBtn:LeftButton
+    </Binding>
+    <Binding name="FULOH_QOL_ROTATION_MARKER_CLEAR">
+        CLICK FulohQoL_RotationMarker_ClearBtn:LeftButton
+    </Binding>
+</Bindings>
