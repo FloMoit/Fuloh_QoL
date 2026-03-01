@@ -33,17 +33,19 @@ function RotationMarker:Initialize()
 
     -- 1. Create the Clear Button
     local clearBtn = CreateFrame("Button", "FulohQoL_RotationMarker_ClearBtn", UIParent, "SecureActionButtonTemplate")
+    clearBtn:RegisterForClicks("AnyDown")
     clearBtn:SetAttribute("type", "macro")
     clearBtn:SetAttribute("macrotext", "/cwm all")
 
     -- 2. Create the Cycle Manager Button
-    -- Inherits SecureHandlerClickTemplate for the secure _onclick snippet 
-    -- and SecureActionButtonTemplate so the game knows it's a secure button
-    local cycleBtn = CreateFrame("Button", "FulohQoL_RotationMarker_CycleBtn", UIParent, "SecureHandlerClickTemplate, SecureActionButtonTemplate")
+    -- Inherits SecureHandlerClickTemplate for the secure _onclick snippet
+    local cycleBtn = CreateFrame("Button", "FulohQoL_RotationMarker_CycleBtn", UIParent, "SecureHandlerClickTemplate")
+    cycleBtn:RegisterForClicks("AnyDown")
     
     -- Create the 8 sub-buttons for each marker (1 to 8)
     for i = 1, 8 do
         local btn = CreateFrame("Button", "FulohQoL_RotationMarker_Btn"..i, UIParent, "SecureActionButtonTemplate")
+        btn:RegisterForClicks("AnyDown")
         btn:SetAttribute("type", "macro")
         btn:SetAttribute("macrotext", "/wm [@cursor] " .. i)
         
