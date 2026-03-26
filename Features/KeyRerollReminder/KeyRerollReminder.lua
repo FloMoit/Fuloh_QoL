@@ -43,7 +43,7 @@ local function OnChallengeModeStart()
     local ownedKeyLevel = C_MythicPlus.GetOwnedKeystoneLevel()
     if not ownedKeyLevel or ownedKeyLevel == 0 then return end
 
-    local _, _, activeKeystoneLevel = C_ChallengeMode.GetActiveKeystoneInfo()
+    local activeKeystoneLevel = C_ChallengeMode.GetActiveKeystoneInfo()
     if not activeKeystoneLevel or activeKeystoneLevel == 0 then return end
 
     if ownedKeyLevel > activeKeystoneLevel then return end
