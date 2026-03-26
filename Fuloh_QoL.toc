@@ -1,9 +1,9 @@
-## Interface: 120000, 120001
+## Interface: 120001, 120005, 120000
 ## Title: Fuloh's QoL
 ## Author: Fuloh
 ## Version: 1.1.0
-## Notes: Modular QoL hub. Features: Joined Group Reminder & Hello World.
-## Notes-frFR: Hub de fonctionnalités QoL. Inclut : Rappel de groupe rejoint & Auto-salutations.
+## Notes: Modular QoL hub. Features: Joined Group Reminder, Hello World, Auto GG & Key Reroll Reminder.
+## Notes-frFR: Hub de fonctionnalités QoL. Inclut : Rappel de groupe rejoint, Auto-salutations, Auto GG & Rappel de reroll de clé.
 ## IconTexture: Interface\AddOns\Fuloh_QoL\icon.tga
 ## SavedVariables: Fuloh_QoLDB
 
@@ -19,3 +19,6 @@ Features\HelloWorld\HelloWorld.lua
 Features\GGGuys\Utils.lua
 Features\GGGuys\Settings.lua
 Features\GGGuys\GGGuys.lua
+
+Features\KeyRerollReminder\UI.lua
+Features\KeyRerollReminder\KeyRerollReminder.lua

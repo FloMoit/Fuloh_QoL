@@ -43,8 +43,8 @@ local function OnEvent(self, event, ...)
     
     if event == "CHALLENGE_MODE_COMPLETED" then
         -- Delay checking and sending to ensure API data is ready and simulate human reaction
-        -- Random delay between 4.0 and 6.0 seconds
-        local delay = math.random(40, 60) / 10
+        -- Random delay between 8.0 and 15.0 seconds
+        local delay = math.random(80, 150) / 10
         
         C_Timer.After(delay, function()
             -- Double check enabled state

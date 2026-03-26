@@ -25,11 +25,12 @@ Celebrate your timed keys with the group effortlessly.
 *   **Human-like Reaction:** Includes a natural, randomized delay (4-6 seconds) after the key completion before sending the message.
 *   **Customizable:** Define your own list of random congratulations messages to cycle through.
 
-## Why Use Fuloh's QoL?
-*   **Modular Design:** Enable only the features you need via the centralized settings panel. **All features are disabled by default** so you have full control.
-*   **Localized:** Fully translated into French (frFR) including dungeon names and UI text.
-*   **Lightweight:** Optimized for performance with minimal memory usage.
-*   **User Friendly:** Simple commands (`/fuloh`) and an intuitive interface.
+### 🔑 Key Reroll Reminder
+Never forget to reroll your key after a timed run.
+*   **Opt-In Per Run:** When a Mythic+ dungeon starts, a popup asks if you want a reminder to reroll your key.
+*   **Timed Runs Only:** The reminder only appears if the dungeon is completed within the time limit.
+*   **Impossible to Miss:** A large, pulsing overlay appears at the center of your screen.
+*   **Quick Dismiss:** Click the reminder to hide it.
 
 ## Getting Started
 Access the main hub with `/fuloh` or via the Interface Options menu to enable features.

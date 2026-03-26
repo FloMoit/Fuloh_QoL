@@ -1,6 +1,7 @@
 # Fuloh's Quality of Life Hub
 
 A consolidated addon for World of Warcraft that combines multiple QoL features into a single, manageable hub with per-feature toggles.
+Obviously made with AI.
 
 ## 📚 Context7 Documentation
 This project is configured to use **Context7** for up-to-date WoW API documentation.
@@ -35,6 +36,33 @@ Displays a reminder banner when joining a Mythic Plus group via LFG, showing the
 - One-click dungeon teleport button (if available)
 - Auto-hides when M+ starts or when leaving group
 - Persists across `/reload`
+
+### GGGuys (Auto GG)
+Automatically celebrates timed Mythic+ completions in party chat.
+
+**Commands:**
+- `/fuloh gg toggle` - Toggle auto-GG on/off
+- `/fuloh gg help` - Show help
+
+**Features:**
+- Sends a random congratulations message when a M+ is completed in time
+- Natural, randomized delay (8-15 seconds) to feel human
+- Customizable message list
+
+### KeyRerollReminder
+Reminds you to reroll your keystone after a timed Mythic+ run.
+
+**Commands:**
+- `/fuloh krr toggle` - Toggle feature on/off
+- `/fuloh krr test` - Show test reminder
+- `/fuloh krr help` - Show help
+
+**Features:**
+- Opt-in per run: popup asks at dungeon start if you want a reminder
+- Shows your current key (dungeon + level) in the popup
+- Only triggers when your key level is <= the dungeon level (reroll makes sense)
+- Large, pulsing center-screen reminder on timed completion
+- Click to dismiss
 
 ### HelloWorld
 Automatically greets party members when joining a group with customizable greeting messages.
@@ -136,15 +164,15 @@ To completely remove Fuloh_QoL:
          │    Feature Registration        │
          └─────────┬──────────────────────┘
                    │
-    ┌──────────────┴───────────────┐
-    │                              │
-┌───▼────────────────┐  ┌─────────▼─────────────┐
-│ JoinedGroupReminder│  │     HelloWorld        │
-│  - Constants.lua   │  │  - Utils.lua          │
-│  - UI.lua          │  
-│  - JoinedGroup...  │  │  - Settings.lua       │
-│                    │  │  - HelloWorld.lua     │
-└────────────────────┘  └───────────────────────┘
+    ┌──────────┬──────────┴──────────┬──────────┐
+    │          │                     │          │
+┌───▼───────┐ ┌───▼──────────┐ ┌────▼─────┐ ┌──▼──────────────┐
+│ JoinedGrp │ │  HelloWorld  │ │  GGGuys  │ │KeyRerollReminder│
+│ Reminder  │ │ - Utils.lua  │ │-Utils.lua│ │  - UI.lua       │
+│-Const.lua │ │ - Settings   │ │-Settings │ │  - KeyReroll... │
+│- UI.lua   │ │ - HelloWorld │ │-GGGuys   │ │                 │
+│- JGR.lua  │ │              │ │          │ │                 │
+└───────────┘ └──────────────┘ └──────────┘ └─────────────────┘
 ```
 
 ### Core Components

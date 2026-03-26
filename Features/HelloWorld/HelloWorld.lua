@@ -69,8 +69,8 @@ local function OnGroupRosterUpdate()
     end
 
     if channel then
-        -- Multi-second delay (4 to 6 seconds) to make it look natural
-        local delay = math.random(40, 60) / 10
+        -- Multi-second delay (5 to 8 seconds) to make it look natural
+        local delay = math.random(50, 80) / 10
 
         C_Timer.After(delay, function()
             -- Final check before sending if still enabled
