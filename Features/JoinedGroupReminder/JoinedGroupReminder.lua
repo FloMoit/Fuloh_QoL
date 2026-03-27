@@ -80,14 +80,18 @@ local function OnLFGListApplicationStatusUpdated(searchResultID, newStatus, oldS
             end
 
             local activityName = GetActivityName(activityID)
+            local activityInfo = activityID and C_LFGList.GetActivityInfoTable(activityID)
+            local mapID = activityInfo and activityInfo.mapID
             DebugPrint("  Caching application info for group member/leader:")
             DebugPrint("    groupName:", info.name)
             DebugPrint("    activityName:", activityName)
+            DebugPrint("    mapID:", mapID)
 
             applicationCache[searchResultID] = {
                 groupName = info.name,
                 activityID = activityID,
                 activityName = activityName,
+                mapID = mapID,
             }
         else
             DebugPrint("  Failed to get SearchResultInfo for status update")
@@ -115,12 +119,15 @@ local function OnLFGListJoinedGroup(searchResultID)
                 activityID = info.activityIDs[1]
             end
             local activityName = GetActivityName(activityID)
+            local activityInfo = activityID and C_LFGList.GetActivityInfoTable(activityID)
+            local mapID = activityInfo and activityInfo.mapID
             cached = {
                 groupName = info.name,
                 activityID = activityID,
                 activityName = activityName,
+                mapID = mapID,
             }
-            DebugPrint("  Direct lookup successful:", cached.activityName)
+            DebugPrint("  Direct lookup successful:", cached.activityName, "mapID:", mapID)
         else
             DebugPrint("  Direct lookup failed (probably already joined and delisted)")
         end
@@ -135,14 +142,15 @@ local function OnLFGListJoinedGroup(searchResultID)
         local activityName = cached.activityName or L["LFG Group"]
         local groupName = cached.groupName or ""
 
-        DebugPrint("  Showing reminder - Activity:", activityName, "Group:", groupName)
+        DebugPrint("  Showing reminder - Activity:", activityName, "Group:", groupName, "mapID:", cached.mapID)
 
         currentReminderData = {
             dungeonName = activityName,
             groupName = groupName,
+            mapID = cached.mapID,
         }
 
-        ns.ShowReminder(activityName, groupName)
+        ns.ShowReminder(activityName, groupName, cached.mapID)
     else
         DebugPrint("  No data found for this searchResultID!")
     end
@@ -181,7 +189,7 @@ local function OnPlayerEnteringWorld(isInitialLogin, isReloadingUi)
             local data = db.activeReminder
             if wasInGroup and not dismissedByUser then
                 currentReminderData = data
-                ns.ShowReminder(data.dungeonName, data.groupName)
+                ns.ShowReminder(data.dungeonName, data.groupName, data.mapID)
             elseif not wasInGroup then
                 db.activeReminder = nil
             end
@@ -219,9 +227,11 @@ local function UpdateFromActiveEntry()
         local activityName = GetActivityName(activityID) or L["LFG Group"]
         local groupName = entryInfo.name or ""
 
+        local activityInfo = activityID and C_LFGList.GetActivityInfoTable(activityID)
         currentReminderData = {
             dungeonName = activityName,
             groupName = groupName,
+            mapID = activityInfo and activityInfo.mapID,
         }
         return true
     end
@@ -243,7 +253,7 @@ local function OnEvent(self, event, ...)
                 dismissedByUser = false
             end
             if not dismissedByUser then
-                ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
+                ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName, currentReminderData.mapID)
             end
         end
     elseif event == "GROUP_ROSTER_UPDATE" then
@@ -252,7 +262,7 @@ local function OnEvent(self, event, ...)
         -- Check active entry first (more accurate if we are the leader)
         if UpdateFromActiveEntry() then
             if not dismissedByUser then
-                ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
+                ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName, currentReminderData.mapID)
             end
         else
             OnPlayerEnteringWorld(...)
@@ -376,7 +386,8 @@ function JGR:HandleCommand(args)
     if cmd == "test" then
         local testDungeon = "Ara-Kara, City of Echoes"
         local testGroup = "chill 10 blast"
-        ns.ShowReminder(testDungeon, testGroup)
+        -- Ara-Kara challenge mode map ID = 2660
+        ns.ShowReminder(testDungeon, testGroup, 2660)
         local spellID = ns.GetDungeonTeleportSpell(testDungeon)
         if spellID and ns.HasDungeonTeleport(spellID) then
             print("|cff00ff00[JGR]|r Test reminder shown with teleport button.")
@@ -391,10 +402,10 @@ function JGR:HandleCommand(args)
     elseif cmd == "show" then
         dismissedByUser = false
         if UpdateFromActiveEntry() then
-            ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
+            ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName, currentReminderData.mapID)
             print("|cff00ff00[JGR]|r Reminder updated from active LFG entry.")
         elseif currentReminderData then
-            ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
+            ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName, currentReminderData.mapID)
             print("|cff00ff00[JGR]|r Reminder restored from last joined group.")
         else
             print("|cff00ff00[JGR]|r No active group data to show.")

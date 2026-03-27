@@ -197,7 +197,7 @@ local function CreateReminderFrame()
     return frame
 end
 
-local function ShowReminder(dungeonName, groupName)
+local function ShowReminder(dungeonName, groupName, mapID)
     if not reminderFrame then
         reminderFrame = CreateReminderFrame()
     end
@@ -210,9 +210,11 @@ local function ShowReminder(dungeonName, groupName)
     end
 
     -- Setup teleport button if spell is available
+    -- Prefer direct mapID lookup (reliable), fall back to name-based lookup
     local teleportBtn = reminderFrame.teleportBtn
     local textContainer = reminderFrame.textContainer
-    local spellID = QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpell(dungeonName)
+    local spellID = (mapID and QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpellByMapID(mapID))
+                 or QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpell(dungeonName)
 
     if spellID and QoL.Features.JoinedGroupReminder_HasDungeonTeleport(spellID) then
         local spellInfo = C_Spell.GetSpellInfo(spellID)

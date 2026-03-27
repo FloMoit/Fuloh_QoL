@@ -29,6 +29,29 @@ local function GetDB()
     return Fuloh_QoLDB and Fuloh_QoLDB.KeyRerollReminder or {}
 end
 
+-- Build a display string for the player's owned keystone (e.g. "Ara-Kara, City of Echoes [10]")
+-- Returns nil if the player has no key.
+-- Reads the full display name from the keystone item's hyperlink in bags (always synchronously available).
+-- The item name already includes the key level, so no separate level lookup is needed.
+local function BuildOwnedKeyDescription()
+    for bag = 0, NUM_BAG_SLOTS do
+        for slot = 1, C_Container.GetContainerNumSlots(bag) do
+            local info = C_Container.GetContainerItemInfo(bag, slot)
+            if info and info.hyperlink then
+                -- Hyperlink format: "|H...|h[Keystone: Ara-Kara, City of Echoes [10]]|h|r"
+                -- Use greedy match to capture from first '[' to last ']', preserving nested brackets
+                local displayName = info.hyperlink:match("%[(.+)%]")
+                if displayName then
+                    local dungeon = displayName:match("^Keystone: (.+)$")
+                    if dungeon then return dungeon end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+
 --------------------------------------------------------------------------------
 -- Event Handlers
 --------------------------------------------------------------------------------
@@ -51,17 +74,10 @@ local function OnChallengeModeStart()
     if ownedKeyLevel > activeKeystoneLevel then return end
 
     -- Build key description (e.g. "Ara-Kara, City of Echoes +8")
-    local keystoneMapID = C_MythicPlus.GetOwnedKeystoneMapID()
-    local dungeonName = "?"
-    if keystoneMapID then
-        local name = C_ChallengeMode.GetMapUIInfo(keystoneMapID)
-        if name then dungeonName = name end
-    end
-    local keyDescription = dungeonName .. " +" .. ownedKeyLevel
-    storedKeyDescription = keyDescription
+    storedKeyDescription = BuildOwnedKeyDescription()
 
     -- Show confirmation popup with current key info
-    ns.ShowConfirmPopup(keyDescription)
+    ns.ShowConfirmPopup(storedKeyDescription)
 end
 
 local function OnChallengeModeCompleted()
@@ -149,12 +165,18 @@ function KeyRerollReminder:HandleCommand(args)
     if cmd == "toggle" then
         QoL:ToggleFeature("KeyRerollReminder")
     elseif cmd == "test" then
-        ns.ShowBigReminder("Ara-Kara, City of Echoes +8")
+        local desc = BuildOwnedKeyDescription() or "No key found"
+        ns.ShowBigReminder(desc)
         print("|cff00ff00[KeyRerollReminder]|r Test reminder shown. Click to dismiss.")
+    elseif cmd == "testpopup" then
+        local desc = BuildOwnedKeyDescription() or "No key found"
+        ns.ShowConfirmPopup(desc)
+        print("|cff00ff00[KeyRerollReminder]|r Test confirmation popup shown.")
     elseif cmd == "help" then
         print("|cff00ff00[KeyRerollReminder]|r Commands:")
-        print("  /fuloh krr toggle - Toggle feature on/off")
-        print("  /fuloh krr test   - Show test reminder")
+        print("  /fuloh krr toggle    - Toggle feature on/off")
+        print("  /fuloh krr test      - Show test big reminder")
+        print("  /fuloh krr testpopup - Show test confirmation popup")
     else
         if Settings and Settings.OpenToCategory then
             Settings.OpenToCategory("Fuloh's QoL")
