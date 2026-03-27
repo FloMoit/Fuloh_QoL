@@ -21,8 +21,9 @@ local function GetDB()
     return Fuloh_QoLDB and Fuloh_QoLDB.JoinedGroupReminder or {}
 end
 
--- Forward declaration for ClearCachedState (will be provided by JoinedGroupReminder.lua)
+-- Forward declarations for callbacks (provided by JoinedGroupReminder.lua)
 local clearCachedState = nil
+local onUserDismiss = nil
 
 local function CreateReminderFrame()
     local frame = CreateFrame("Frame", "Fuloh_QoL_JGR_ReminderFrame", UIParent, "BackdropTemplate")
@@ -162,6 +163,7 @@ local function CreateReminderFrame()
     end)
 
     closeBtn:SetScript("OnClick", function()
+        if onUserDismiss then onUserDismiss() end
         QoL.Features.JoinedGroupReminder_HideReminder(true)
     end)
 
@@ -272,7 +274,11 @@ QoL.Features.JoinedGroupReminder_ShowReminder = ShowReminder
 QoL.Features.JoinedGroupReminder_HideReminder = HideReminder
 QoL.Features.JoinedGroupReminder_IsReminderShown = IsReminderShown
 
--- Allow JoinedGroupReminder.lua to provide ClearCachedState callback
+-- Allow JoinedGroupReminder.lua to provide callbacks
 QoL.Features.JoinedGroupReminder_SetClearCachedStateCallback = function(callback)
     clearCachedState = callback
+end
+
+QoL.Features.JoinedGroupReminder_SetUserDismissCallback = function(callback)
+    onUserDismiss = callback
 end

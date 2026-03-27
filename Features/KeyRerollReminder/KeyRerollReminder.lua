@@ -19,6 +19,7 @@ local KeyRerollReminder = {
 -- Private state
 local eventFrame = CreateFrame("Frame")
 local wantsReminder = false
+local storedKeyDescription = nil
 
 -- UI function references (populated in Initialize)
 local ns = {}
@@ -37,6 +38,7 @@ local function OnChallengeModeStart()
 
     -- Reset state for new run
     wantsReminder = false
+    storedKeyDescription = nil
 
     -- Only ask if rerolling makes sense:
     -- Player must have a key whose level is <= the dungeon that just started
@@ -56,6 +58,7 @@ local function OnChallengeModeStart()
         if name then dungeonName = name end
     end
     local keyDescription = dungeonName .. " +" .. ownedKeyLevel
+    storedKeyDescription = keyDescription
 
     -- Show confirmation popup with current key info
     ns.ShowConfirmPopup(keyDescription)
@@ -81,7 +84,7 @@ local function OnChallengeModeCompleted()
         end
 
         if onTime then
-            ns.ShowBigReminder()
+            ns.ShowBigReminder(storedKeyDescription)
         end
 
         -- Reset for next run
@@ -146,7 +149,7 @@ function KeyRerollReminder:HandleCommand(args)
     if cmd == "toggle" then
         QoL:ToggleFeature("KeyRerollReminder")
     elseif cmd == "test" then
-        ns.ShowBigReminder()
+        ns.ShowBigReminder("Ara-Kara, City of Echoes +8")
         print("|cff00ff00[KeyRerollReminder]|r Test reminder shown. Click to dismiss.")
     elseif cmd == "help" then
         print("|cff00ff00[KeyRerollReminder]|r Commands:")

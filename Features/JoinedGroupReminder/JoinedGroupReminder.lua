@@ -23,6 +23,7 @@ local L = QoL.Features.JoinedGroupReminder_Constants.L
 local applicationCache = {}
 local currentReminderData = nil
 local wasInGroup = false
+local dismissedByUser = false
 local debugMode = false
 local eventFrame = CreateFrame("Frame")
 local applyToGroupHooked = false
@@ -99,6 +100,9 @@ local function OnLFGListJoinedGroup(searchResultID)
     if not JGR.isEnabled then return end
     DebugPrint("JOINED_GROUP - searchResultID:", searchResultID)
 
+    -- New group joined, clear any previous dismiss
+    dismissedByUser = false
+
     local cached = searchResultID and applicationCache[searchResultID]
 
     -- Fallback: direct lookup if not cached
@@ -156,6 +160,7 @@ local function OnGroupRosterUpdate()
 
     -- Detect leaving group
     if wasInGroup and not inGroup then
+        dismissedByUser = false
         -- Only hide if not listing a group ourselves
         if not C_LFGList.GetActiveEntryInfo() then
             ns.HideReminder(true)
@@ -174,10 +179,10 @@ local function OnPlayerEnteringWorld(isInitialLogin, isReloadingUi)
         local db = GetDB()
         if db.activeReminder then
             local data = db.activeReminder
-            if wasInGroup then
+            if wasInGroup and not dismissedByUser then
                 currentReminderData = data
                 ns.ShowReminder(data.dungeonName, data.groupName)
-            else
+            elseif not wasInGroup then
                 db.activeReminder = nil
             end
         end
@@ -230,15 +235,25 @@ local function OnEvent(self, event, ...)
     elseif event == "LFG_LIST_APPLICATION_STATUS_UPDATED" then
         OnLFGListApplicationStatusUpdated(...)
     elseif event == "LFG_LIST_ACTIVE_ENTRY_UPDATE" then
+        local oldData = currentReminderData
         if UpdateFromActiveEntry() then
-            ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
+            -- If the listing changed (new dungeon or new group name), reset dismiss
+            if oldData and (oldData.dungeonName ~= currentReminderData.dungeonName
+                        or oldData.groupName ~= currentReminderData.groupName) then
+                dismissedByUser = false
+            end
+            if not dismissedByUser then
+                ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
+            end
         end
     elseif event == "GROUP_ROSTER_UPDATE" then
         OnGroupRosterUpdate()
     elseif event == "PLAYER_ENTERING_WORLD" then
         -- Check active entry first (more accurate if we are the leader)
         if UpdateFromActiveEntry() then
-            ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
+            if not dismissedByUser then
+                ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
+            end
         else
             OnPlayerEnteringWorld(...)
         end
@@ -270,9 +285,21 @@ function JGR:Initialize()
     ns.GetDungeonTeleportSpell = QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpell
     ns.HasDungeonTeleport = QoL.Features.JoinedGroupReminder_HasDungeonTeleport
 
+    -- Build localized name lookup from map IDs (game data available after ADDON_LOADED)
+    if QoL.Features.JoinedGroupReminder_BuildNameLookup then
+        QoL.Features.JoinedGroupReminder_BuildNameLookup()
+    end
+
     -- Register ClearCachedState callback with UI
     if QoL.Features.JoinedGroupReminder_SetClearCachedStateCallback then
         QoL.Features.JoinedGroupReminder_SetClearCachedStateCallback(ns.ClearCachedState)
+    end
+
+    -- Register user dismiss callback with UI
+    if QoL.Features.JoinedGroupReminder_SetUserDismissCallback then
+        QoL.Features.JoinedGroupReminder_SetUserDismissCallback(function()
+            dismissedByUser = true
+        end)
     end
 
     -- Hook ApplyToGroup once (global hook, not tied to enable/disable)
@@ -362,6 +389,7 @@ function JGR:HandleCommand(args)
         print("|cff00ff00[JGR]|r Reminder hidden.")
 
     elseif cmd == "show" then
+        dismissedByUser = false
         if UpdateFromActiveEntry() then
             ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName)
             print("|cff00ff00[JGR]|r Reminder updated from active LFG entry.")

@@ -21,7 +21,7 @@ local Constants = {
         WIDTH = 450,
         HEIGHT = 78,
         Y_OFFSET = -100,
-        
+
         ICON_SIZE = 48,
         CLOSE_BUTTON_SIZE = 30,
 
@@ -55,214 +55,140 @@ local Constants = {
     },
 }
 
--- Faction-specific IDs
+-- Faction-specific spell IDs
 local faction = UnitFactionGroup("player")
 local siegeID = (faction == "Horde") and 464256 or 445418
 local motherID = (faction == "Horde") and 467555 or 467553
 
--- Dungeon teleport spell IDs (Hero's Path teleports)
--- Index built from MDungeonTeleports/data/DungeonPortals.lua and locales/enUS.lua
-local DungeonTeleports = {
-    -- The War Within
-    ["Ara-Kara, City of Echoes"] = 445417,
-    ["The Dawnbreaker"] = 445414,
-    ["Path of the Eco-Dome"] = 1237215,
-    ["Eco-Dome"] = 1237215,
-    ["Halls of Atonement"] = 354465,
-    ["Operation: Floodgate"] = 1216786,
-    ["Priory of the Sacred Flame"] = 445444,
-    ["Tazavesh, the Veiled Market"] = 367416,
-    ["Cinderbrew Meadery"] = 445440,
-    ["City of Threads"] = 445416,
-    ["Darkflame Cleft"] = 445441,
-    ["The Rookery"] = 445443,
-    ["The Stonevault"] = 445269,
+--------------------------------------------------------------------------------
+-- Dungeon Teleport Spell IDs (map challenge mode ID -> spell ID)
+-- Sourced from BigWigs/Tools/Keystones.lua and cross-referenced with existing data
+--------------------------------------------------------------------------------
 
-    -- Midnight (Season 1)
-    ["Algethar Academy"] = 393273,
-    ["Magisters' Terrace"] = 1254572,
-    ["Maisara Caverns"] = 1254559,
-    ["Nexus-Point Xenas"] = 1254563,
-    ["Pit of Saron"] = 1254555,
-    ["Seat of the Triumvirate"] = 1254551,
-    ["Skyreach"] = 1254557,
-    ["Windrunner Spire"] = 1254400,
+local TeleportsByMapID = {
+    -- Midnight
+    [2805] = 1254400,  -- Windrunner Spire
+    [2811] = 1254572,  -- Magisters' Terrace
+    [2874] = 1254559,  -- Maisara Caverns
+    [2915] = 1254563,  -- Nexus-Point Xenas
+
+    -- The War Within
+    [2648] = 445443,   -- The Rookery
+    [2649] = 445444,   -- Priory of the Sacred Flame
+    [2651] = 445441,   -- Darkflame Cleft
+    [2652] = 445269,   -- The Stonevault
+    [2660] = 445417,   -- Ara-Kara, City of Echoes
+    [2661] = 445440,   -- Cinderbrew Meadery
+    [2662] = 445414,   -- The Dawnbreaker
+    [2669] = 445416,   -- City of Threads
+    [2773] = 1216786,  -- Operation: Floodgate
+    [2830] = 1237215,  -- Eco-Dome Al'dani
 
     -- Dragonflight
-    ["The Azure Vault"] = 393279,
-    ["Brackenhide Hollow"] = 393267,
-    ["Dawn of the Infinite"] = 424197,
-    ["Halls of Infusion"] = 393283,
-    ["Neltharus"] = 393276,
-    ["The Nokud Offensive"] = 393262,
-    ["Ruby Life Pools"] = 393256,
-    ["Uldaman: Legacy of Tyr"] = 393222,
+    [2451] = 393222,   -- Uldaman: Legacy of Tyr
+    [2515] = 393279,   -- The Azure Vault
+    [2516] = 393262,   -- The Nokhud Offensive
+    [2519] = 393276,   -- Neltharus
+    [2520] = 393267,   -- Brackenhide Hollow
+    [2521] = 393256,   -- Ruby Life Pools
+    [2526] = 393273,   -- Algeth'ar Academy
+    [2527] = 393283,   -- Halls of Infusion
+    [2579] = 424197,   -- Dawn of the Infinite
 
     -- Shadowlands
-    ["De Other Side"] = 354468,
-    ["Mists of Tirna Scithe"] = 354464,
-    ["The Necrotic Wake"] = 354462,
-    ["Plaguefall"] = 354463,
-    ["Sanguine Depths"] = 354469,
-    ["Spires of Ascension"] = 354466,
-    ["Theatre of Pain"] = 354467,
+    [2284] = 354469,   -- Sanguine Depths
+    [2285] = 354466,   -- Spires of Ascension
+    [2286] = 354462,   -- The Necrotic Wake
+    [2287] = 354465,   -- Halls of Atonement
+    [2289] = 354463,   -- Plaguefall
+    [2290] = 354464,   -- Mists of Tirna Scithe
+    [2291] = 354468,   -- De Other Side
+    [2293] = 354467,   -- Theater of Pain
+    [2441] = 367416,   -- Tazavesh, the Veiled Market
 
     -- Battle for Azeroth
-    ["Atal'Dazar"] = 424187,
-    ["Freehold"] = 410071,
-    ["Operation: Mechagon"] = 373274,
-    ["The MOTHERLODE!!"] = motherID,
-    ["Siege of Boralus"] = siegeID,
-    ["The Underrot"] = 410074,
-    ["Waycrest Manor"] = 424167,
+    [1763] = 424187,   -- Atal'Dazar
+    [1754] = 410071,   -- Freehold
+    [1822] = siegeID,   -- Siege of Boralus (faction-specific)
+    [1594] = motherID,  -- The MOTHERLODE!! (faction-specific)
+    [1841] = 410074,   -- The Underrot
+    [1862] = 424167,   -- Waycrest Manor
+    [2097] = 373274,   -- Operation: Mechagon
 
     -- Legion
-    ["Blackrook Hold"] = 424153,
-    ["Court of Stars"] = 393766,
-    ["Darkheart Thicket"] = 424163,
-    ["Halls of Valor"] = 393764,
-    ["Karazhan"] = 373262,
-    ["Neltharion's Lair"] = 410078,
+    [1571] = 393766,   -- Court of Stars
+    [1651] = 373262,   -- Return to Karazhan
+    [1501] = 424153,   -- Black Rook Hold
+    [1466] = 424163,   -- Darkheart Thicket
+    [1458] = 410078,   -- Neltharion's Lair
+    [1477] = 393764,   -- Halls of Valor
+    [1753] = 1254551,  -- Seat of the Triumvirate
 
     -- Warlords of Draenor
-    ["Auchindoun"] = 159897,
-    ["Bloodmaul Slag Mines"] = 159895,
-    ["The Everbloom"] = 159901,
-    ["Grimrail Depot"] = 159900,
-    ["Iron Docks"] = 159896,
-    ["Shadowmoon Valley"] = 159899,
-    ["Upper Blackrock Spire"] = 159902,
+    [1209] = 159898,   -- Skyreach
+    [1176] = 159899,   -- Shadowmoon Burial Grounds
+    [1208] = 159900,   -- Grimrail Depot
+    [1279] = 159901,   -- The Everbloom
+    [1195] = 159896,   -- Iron Docks
+    [1182] = 159897,   -- Auchindoun
+    [1175] = 159895,   -- Bloodmaul Slag Mines
+    [1358] = 159902,   -- Upper Blackrock Spire
 
     -- Mists of Pandaria
-    ["Gate of the Setting Sun"] = 131225,
-    ["Mogu'shan Palace"] = 131222,
-    ["Scholomance"] = 131232,
-    ["Scarlet Halls"] = 131231,
-    ["Scarlet Monastery"] = 131229,
-    ["Niuzao Temple"] = 131228,
-    ["Shado-pan Monastery"] = 131206,
-    ["Stormstout Brewery"] = 131205,
-    ["Temple of the Jade Serpent"] = 131204,
+    [959]  = 131206,   -- Shado-Pan Monastery
+    [960]  = 131204,   -- Temple of the Jade Serpent
+    [961]  = 131205,   -- Stormstout Brewery
+    [962]  = 131225,   -- Gate of the Setting Sun
+    [994]  = 131222,   -- Mogu'shan Palace
+    [1001] = 131231,   -- Scarlet Halls
+    [1007] = 131232,   -- Scholomance
+    [1011] = 131228,   -- Siege of Niuzao Temple
+    [1004] = 131229,   -- Scarlet Monastery
 
     -- Cataclysm
-    ["Grim Batol"] = 445424,
-    ["Throne of the Tides"] = 424142,
-    ["The Vortex Pinnacle"] = 410080,
-    
-    -- Additional Aliases/Short Names
-    ["Ara-Kara"] = 445417,
-    ["Dawnbreaker"] = 445414,
-    ["Stonevault"] = 445269,
-    ["Rookery"] = 445443,
-    ["Cinderbrew"] = 445440,
-    ["Priory"] = 445444,
-    ["Floodgate"] = 1216786,
-    ["Mists"] = 354464,
-    ["Necrotic"] = 354462,
-    ["Spires"] = 354466,
-    ["Theatre"] = 354467,
-    ["Mechagon"] = 373274,
-    ["Tazavesh"] = 367416,
-    ["Vortex Pinnacle"] = 410080,
-    ["Throne of Tides"] = 424142,
-    ["Everbloom"] = 159901,
-    ["Grimrail"] = 159900,
-    ["Iron Docks"] = 159896,
-    ["Shadowmoon"] = 159899,
-    ["Upper Blackrock"] = 159902,
+    [643]  = 424142,   -- Throne of the Tides
+    [657]  = 410080,   -- The Vortex Pinnacle
+    [670]  = 445424,   -- Grim Batol
 
-    -- French Localization (The War Within & Legacy)
-    ["Ara-Kara, la cité des Échos"] = 445417,
-    ["Cité des Fils"] = 445416,
-    ["La Cavepierre"] = 445269,
-    ["Le Brise-Aube"] = 445414,
-    ["Prieuré de la Flamme sacrée"] = 445444,
-    ["Hydromellerie de Brassecendre"] = 445440,
-    ["Faille de Flamme-Noire"] = 445441,
-    ["La Colonie"] = 445443,
-    ["Écodôme"] = 1237215,
-    ["Salles de l'Expiation"] = 354465,
-    ["Opération : Écluses"] = 1216786,
-    ["Opération Vannes ouvertes"] = 1216786, -- Alternative name check
-    ["Tazavesh, le marché dissimulé"] = 367416,
-    
-    -- Midnight (S1) French (Speculative/Confirmed)
-    ["Académie d'Algeth'ar"] = 393273,
-    ["Terrasse des Magistères"] = 1254572,
-    ["Fosse de Saron"] = 1254555,
-    ["Siège du Triumvirat"] = 1254551,
-    ["Orée-du-Ciel"] = 1254557,
-    ["Flèche Coursevent"] = 1254400,
-
-    -- Dragonflight French
-    ["Le caveau d'Azur"] = 393279,
-    ["Creux des Fougerobes"] = 393267,
-    ["Aube de l'Infini"] = 424197,
-    ["Salles de l'Imprégnation"] = 393283,
-    ["L'offensive Nokhud"] = 393262,
-    ["Bassins de l'Essence rubis"] = 393256,
-    ["Uldaman : l'héritage de Tyr"] = 393222,
-
-    -- Shadowlands French
-    ["L'Autre Côté"] = 354468,
-    ["Brumes de Tirna Scithe"] = 354464,
-    ["Sillage nécrotique"] = 354462,
-    ["Malepeste"] = 354463,
-    ["Profondeurs Sanguines"] = 354469,
-    ["Flèches de l'Ascension"] = 354466,
-    ["Théâtre de la Souffrance"] = 354467,
-
-    -- BfA French
-    ["Port-Liberté"] = 410071,
-    ["Opération Mécagone"] = 373274,
-    ["Le Filon"] = motherID,
-    ["Siège de Boralus"] = siegeID,
-    ["Les Tréfonds Putrides"] = 410074,
-    ["Manoir Malvoie"] = 424167,
-
-    -- Legion French
-    ["Bastion du Freux"] = 424153,
-    ["Cour des Étoiles"] = 393766,
-    ["Fourré Sombrecœur"] = 424163,
-    ["Salles des Valeureux"] = 393764,
-    ["Retour à Karazhan"] = 373262,
-    ["Repaire de Neltharion"] = 410078,
-
-    -- WoD French
-    ["Mines de la Masse-Sanglante"] = 159895,
-    ["La Flore éternelle"] = 159901,
-    ["Dépôt de Tristerail"] = 159900,
-    ["Quais de Fer"] = 159896,
-    ["Terres sacrées d'Ombrelune"] = 159899,
-    ["Sommet du Pic Rochenoire"] = 159902,
-
-    -- MoP French
-    ["Porte du Soleil couchant"] = 131225,
-    ["Palais Mogu'shan"] = 131222,
-    ["Salles Écarlates"] = 131231,
-    ["Monastère Écarlate"] = 131229,
-    ["Siège du temple de Niuzao"] = 131228,
-    ["Monastère des Pandashan"] = 131206,
-    ["Brasserie Brune d'Orage"] = 131205,
-    ["Temple du Serpent de jade"] = 131204,
-
-    -- Cataclysm French
-    ["Trône des marées"] = 424142,
-    ["La cime du Vortex"] = 410080,
+    -- Wrath of the Lich King
+    [658]  = 1254555,  -- Pit of Saron
 }
 
--- Find teleport spell for a dungeon name
+-- Auto-built name -> spellID table (populated by BuildNameLookup)
+local TeleportsByName = {}
+
+-- Build localized name lookup from map IDs using the game API
+local function BuildNameLookup()
+    TeleportsByName = {}
+    for mapID, spellID in pairs(TeleportsByMapID) do
+        local name = C_ChallengeMode.GetMapUIInfo(mapID)
+        if name then
+            TeleportsByName[name] = spellID
+        end
+    end
+end
+
+--------------------------------------------------------------------------------
+-- Teleport Lookup Functions
+--------------------------------------------------------------------------------
+
+-- Find teleport spell by dungeon map ID (preferred)
+local function GetDungeonTeleportSpellByMapID(mapID)
+    return mapID and TeleportsByMapID[mapID] or nil
+end
+
+-- Find teleport spell by dungeon name (auto-built from game API)
 local function GetDungeonTeleportSpell(dungeonName)
     if not dungeonName then return nil end
 
-    -- Try exact match first
-    if DungeonTeleports[dungeonName] then
-        return DungeonTeleports[dungeonName]
+    -- Exact match (localized names built from game API)
+    if TeleportsByName[dungeonName] then
+        return TeleportsByName[dungeonName]
     end
 
-    -- Try partial match
-    for pattern, spellID in pairs(DungeonTeleports) do
-        if dungeonName:find(pattern, 1, true) then
+    -- Partial match (handles prefixed names like "Mythic Keystone: ...")
+    for name, spellID in pairs(TeleportsByName) do
+        if dungeonName:find(name, 1, true) then
             return spellID
         end
     end
@@ -270,12 +196,23 @@ local function GetDungeonTeleportSpell(dungeonName)
     return nil
 end
 
--- Check if player has a teleport spell
+-- Check if player knows a teleport spell (shows button even on cooldown)
 local function HasDungeonTeleport(spellID)
     if not spellID then return false end
+    if IsSpellKnownOrOverridesKnown and IsSpellKnownOrOverridesKnown(spellID) then
+        return true
+    end
+    if C_Spell.IsSpellKnownOrOverridesKnown and C_Spell.IsSpellKnownOrOverridesKnown(spellID) then
+        return true
+    end
+    -- Fallback to usable check
     local isUsable = C_Spell.IsSpellUsable(spellID)
     return isUsable or false
 end
+
+--------------------------------------------------------------------------------
+-- LFG Helper Functions
+--------------------------------------------------------------------------------
 
 -- Helper function to check if an activity is M+
 local function IsMythicPlusActivity(activityID)
@@ -333,9 +270,14 @@ local function GetDungeonName(activityID)
     return Constants.L["Unknown Dungeon"]
 end
 
--- Export to Fuloh_QoL.Features namespace
+--------------------------------------------------------------------------------
+-- Exports
+--------------------------------------------------------------------------------
+
 QoL.Features.JoinedGroupReminder_Constants = Constants
 QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpell = GetDungeonTeleportSpell
+QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpellByMapID = GetDungeonTeleportSpellByMapID
 QoL.Features.JoinedGroupReminder_HasDungeonTeleport = HasDungeonTeleport
 QoL.Features.JoinedGroupReminder_IsMythicPlusActivity = IsMythicPlusActivity
 QoL.Features.JoinedGroupReminder_GetDungeonName = GetDungeonName
+QoL.Features.JoinedGroupReminder_BuildNameLookup = BuildNameLookup
