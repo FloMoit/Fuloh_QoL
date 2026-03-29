@@ -23,8 +23,9 @@ local function SendStart(sessionID)
     Send(Constants.OPCODE_START .. ":" .. sessionID)
 end
 
-local function SendKey(sessionID, mapID, level)
-    Send(Constants.OPCODE_KEY .. ":" .. sessionID .. ":" .. mapID .. ":" .. level)
+local function SendKey(sessionID, mapID, level, name)
+    -- Name is appended as last field (may be empty, may contain special chars)
+    Send(Constants.OPCODE_KEY .. ":" .. sessionID .. ":" .. mapID .. ":" .. level .. ":" .. (name or ""))
 end
 
 local function SendVote(sessionID, selectedKeys)
@@ -69,7 +70,15 @@ local function ParseMessage(payload)
         local mapID = tonumber(parts[3])
         local level = tonumber(parts[4])
         if not mapID or not level then return nil end
-        return { opcode = opcode, sessionID = sessionID, mapID = mapID, level = level }
+        -- Name is everything after the 4th colon (last field, may contain colons)
+        local pos = 0
+        for i = 1, 4 do
+            pos = payload:find(":", pos + 1, true)
+            if not pos then break end
+        end
+        local name = pos and payload:sub(pos + 1) or nil
+        if name == "" then name = nil end
+        return { opcode = opcode, sessionID = sessionID, mapID = mapID, level = level, name = name }
 
     elseif opcode == Constants.OPCODE_VOTE then
         -- parts[3] is the comma-separated key list (may be empty for abstain)

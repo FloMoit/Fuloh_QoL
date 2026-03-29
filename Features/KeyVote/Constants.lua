@@ -87,11 +87,17 @@ local Constants = {
 -- Resolve a challenge mode mapID to (name, texture).
 -- Tries C_ChallengeMode.GetMapUIInfo first, then falls back to the
 -- JoinedGroupReminder teleport spell icon for the texture.
+-- If map info is not yet cached, requests it for future calls.
 local function ResolveDungeonInfo(mapID)
     if not mapID or mapID == 0 then return nil, nil end
 
     -- Primary: C_ChallengeMode API
     local name, _, _, texture = C_ChallengeMode.GetMapUIInfo(mapID)
+
+    -- If GetMapUIInfo returned nothing, request a cache refresh for next time
+    if not name and C_MythicPlus and C_MythicPlus.RequestMapInfo then
+        C_MythicPlus.RequestMapInfo()
+    end
 
     -- Fallback for texture: use teleport spell icon from JoinedGroupReminder
     if not texture then

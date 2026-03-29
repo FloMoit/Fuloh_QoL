@@ -67,20 +67,21 @@ local ResolveDungeonInfo
 -- Keystone Detection (local player)
 --------------------------------------------------------------------------------
 
--- Scan bags for keystone display name (fallback when C_ChallengeMode returns nil)
+-- Scan bags for keystone display name (fallback when C_ChallengeMode returns nil).
+-- Locale-independent: detects keystones via |Hkeystone: hyperlink tag, then strips
+-- the localized prefix (e.g. "Keystone: " / "Clé de voûte : ") and level suffix.
 local function ScanKeystoneName()
     for bag = 0, NUM_BAG_SLOTS do
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
             local info = C_Container.GetContainerItemInfo(bag, slot)
-            if info and info.hyperlink then
+            if info and info.hyperlink and info.hyperlink:find("|Hkeystone:", 1, true) then
                 local displayName = info.hyperlink:match("%[(.+)%]")
                 if displayName then
-                    local dungeon = displayName:match("^Keystone: (.+)$")
-                    if dungeon then
-                        -- Strip the level suffix like " [10]" to get just the dungeon name
-                        local cleanName = dungeon:match("^(.+) %[%d+%]$") or dungeon
-                        return cleanName
-                    end
+                    -- Strip everything up to and including the first ": " (works for all locales)
+                    local name = displayName:match("^.+:%s*(.+)$") or displayName
+                    -- Strip level suffix like " [10]"
+                    name = name:gsub("%s*%[%d+%]$", "")
+                    return name
                 end
             end
         end
@@ -257,12 +258,7 @@ local function TransitionToResults()
         Print(L["No active vote"])
     end
 
-    -- Auto-dismiss after RESULTS_DURATION
-    session.resultsTimerHandle = C_Timer.NewTimer(C.RESULTS_DURATION, function()
-        if session.state == STATE_RESULTS then
-            DismissResults()
-        end
-    end)
+    -- Results stay visible until the user clicks to dismiss (no auto-hide)
 end
 
 DismissResults = function()
@@ -296,9 +292,9 @@ local function HandleStart(senderName, msg)
     session.votes = {}
     session.myVoteSubmitted = false
 
-    -- Send own key
+    -- Send own key (including name so other clients can use it)
     local mapID, level, name = GetOwnKeystone()
-    SendKey(session.id, mapID, level)
+    SendKey(session.id, mapID, level, name)
 
     -- Add self as participant immediately
     session.participants[GetPlayerName()] = { mapID = mapID, level = level, name = name }
@@ -319,13 +315,17 @@ local function HandleKey(senderName, msg)
     if session.state ~= STATE_VOTING then return end
     if msg.sessionID ~= session.id then return end
 
-    -- Get display name for the dungeon (with fallback)
-    local displayName = nil
-    if msg.mapID ~= 0 then
+    -- Resolve display name: prefer sender's name (from protocol), then local resolution,
+    -- then keep any existing name we already have for this participant.
+    local displayName = msg.name
+    if not displayName and msg.mapID ~= 0 then
         displayName = ResolveDungeonInfo(msg.mapID)
     end
+    local existing = session.participants[senderName]
+    if not displayName and existing then
+        displayName = existing.name
+    end
 
-    -- Last KVKEY wins (handles deduplication on UI reload)
     session.participants[senderName] = {
         mapID = msg.mapID,
         level = msg.level,
@@ -593,6 +593,11 @@ function KeyVote:Initialize()
 
     -- Register addon message prefix (must be eager — messages before registration are dropped)
     C_ChatInfo.RegisterAddonMessagePrefix(C.ADDON_PREFIX)
+
+    -- Pre-warm the M+ map data cache so C_ChallengeMode.GetMapUIInfo() returns data
+    if C_MythicPlus and C_MythicPlus.RequestMapInfo then
+        C_MythicPlus.RequestMapInfo()
+    end
 end
 
 function KeyVote:Enable()
