@@ -8,3 +8,4 @@
 .gemini/
 .agent/
 .cursorrules
+.claude/settings.local.json

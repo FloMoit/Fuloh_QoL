@@ -22,5 +22,10 @@ Opt-in popup at M+ start asks if you want a reroll reminder. If timed, shows a l
 ### 🔔 Filled Group Alert
 Plays a sound when your group reaches 5 members. Customizable sound with preview in settings.
 
+### 🗳️ Key Vote
+Trigger a group vote on which M+ keystone to run. Type `/fuloh vote` or `!vote` in party chat.
+All addon users see a popup with every group member's key. Check the ones you'd run, hit Vote.
+After 30s or once everyone votes, the winner is shown with dungeon icons.
+
 ## Getting Started
 Access the main hub with `/fuloh` or via the Interface Options menu to enable features.
