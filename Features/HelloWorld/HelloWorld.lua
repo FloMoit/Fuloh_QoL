@@ -32,10 +32,11 @@ local function GetRandomGreeting()
     local db = GetDB()
     local Utils = QoL.Features.HelloWorld_Utils
 
-    local greetings = (db.greetings and #db.greetings > 0)
+    local greetings = (db.greetings ~= nil)
                       and db.greetings
                       or (Utils and Utils.DefaultGreetings or {"Hello!"})
 
+    if #greetings == 0 then return nil end
     return greetings[math.random(#greetings)]
 end
 
@@ -77,8 +78,10 @@ local function OnGroupRosterUpdate()
             if not HelloWorld.isEnabled then return end
             
             -- Use pcall to safely handle chat errors (throttling, silence, etc.)
+            local message = GetRandomGreeting()
+            if not message or message == "" then return end
+
             local success, err = pcall(function()
-                local message = GetRandomGreeting()
                 SendChatMessage(message, channel)
             end)
 

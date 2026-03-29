@@ -60,7 +60,7 @@ function Settings.CreateEmbeddedSettings(parent, yOffset)
     -- Load data
     local db = GetDB()
     local Utils = QoL.Features.GGGuys_Utils
-    local list = (db.messages and #db.messages > 0)
+    local list = (db.messages ~= nil)
                  and db.messages
                  or (Utils and Utils.DefaultGGs or {})
     local text = table.concat(list, "\n")

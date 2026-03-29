@@ -60,7 +60,7 @@ function Settings.CreateEmbeddedSettings(parent, yOffset)
     -- Load data
     local db = GetDB()
     local Utils = QoL.Features.HelloWorld_Utils
-    local list = (db.greetings and #db.greetings > 0)
+    local list = (db.greetings ~= nil)
                  and db.greetings
                  or (Utils and Utils.DefaultGreetings or {})
     local text = table.concat(list, "\n")

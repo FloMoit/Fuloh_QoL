@@ -30,10 +30,11 @@ local function GetRandomMessage()
     local Utils = QoL.Features.GGGuys_Utils
     local defaults = Utils and Utils.DefaultGGs or {"GG :)"}
 
-    local list = (db.messages and #db.messages > 0)
+    local list = (db.messages ~= nil)
                  and db.messages
                  or defaults
 
+    if #list == 0 then return nil end
     return list[math.random(#list)]
 end
 

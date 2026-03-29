@@ -437,9 +437,6 @@ local function RegisterSettings()
             Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or false,
             function() return Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled end,
             function(value)
-                Fuloh_QoLDB[name] = Fuloh_QoLDB[name] or {}
-                Fuloh_QoLDB[name].enabled = value
-
                 if value then
                     QoL:EnableFeature(name)
                 else
@@ -457,9 +454,6 @@ local function RegisterSettings()
         checkbox:SetChecked(Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or false)
         checkbox:SetScript("OnClick", function(self)
             local isChecked = self:GetChecked()
-            Fuloh_QoLDB[name] = Fuloh_QoLDB[name] or {}
-            Fuloh_QoLDB[name].enabled = isChecked
-
             if isChecked then
                 QoL:EnableFeature(name)
             else
