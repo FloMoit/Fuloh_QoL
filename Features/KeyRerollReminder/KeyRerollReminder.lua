@@ -20,6 +20,7 @@ local KeyRerollReminder = {
 local eventFrame = CreateFrame("Frame")
 local wantsReminder = false
 local storedKeyDescription = nil
+local watchingForReroll = false    -- watching CHAT_MSG_LOOT for the NPC reroll
 
 -- UI function references (populated in Initialize)
 local ns = {}
@@ -29,26 +30,53 @@ local function GetDB()
     return Fuloh_QoLDB and Fuloh_QoLDB.KeyRerollReminder or {}
 end
 
--- Build a display string for the player's owned keystone (e.g. "Ara-Kara, City of Echoes [10]")
--- Returns nil if the player has no key.
--- Reads the full display name from the keystone item's hyperlink in bags (always synchronously available).
--- The item name already includes the key level, so no separate level lookup is needed.
-local function BuildOwnedKeyDescription()
+-- Scan bags and return (hyperlink, displayDescription) for the player's keystone.
+-- hyperlink  : the raw item hyperlink (used for change-detection).
+-- description: the human-readable "Dungeon Name [+N]" string (used for UI).
+-- Both are nil when the player has no keystone.
+local function ScanOwnedKeystone()
     for bag = 0, NUM_BAG_SLOTS do
         for slot = 1, C_Container.GetContainerNumSlots(bag) do
             local info = C_Container.GetContainerItemInfo(bag, slot)
             if info and info.hyperlink then
                 -- Hyperlink format: "|H...|h[Keystone: Ara-Kara, City of Echoes [10]]|h|r"
-                -- Use greedy match to capture from first '[' to last ']', preserving nested brackets
+                -- Greedy match captures from first '[' to last ']', preserving nested brackets.
                 local displayName = info.hyperlink:match("%[(.+)%]")
                 if displayName then
                     local dungeon = displayName:match("^Keystone: (.+)$")
-                    if dungeon then return dungeon end
+                    if dungeon then
+                        return info.hyperlink, dungeon
+                    end
                 end
             end
         end
     end
-    return nil
+    return nil, nil
+end
+
+-- Convenience wrapper that returns only the display string (e.g. for the confirm popup).
+local function BuildOwnedKeyDescription()
+    local _, desc = ScanOwnedKeystone()
+    return desc
+end
+
+-- Safety timer for the reroll watch window.
+local rerollWatchTimer = nil
+
+-- Stop watching for the keystone reroll.
+local function StopWatchingForReroll()
+    if not watchingForReroll then return end
+    watchingForReroll = false
+    eventFrame:UnregisterEvent("CHAT_MSG_LOOT")
+    if rerollWatchTimer then
+        rerollWatchTimer:Cancel()
+        rerollWatchTimer = nil
+    end
+end
+
+-- Cancel everything (used by Disable and new-run start).
+local function StopAllWatching()
+    StopWatchingForReroll()
 end
 
 
@@ -59,6 +87,9 @@ end
 local function OnChallengeModeStart()
     if not KeyRerollReminder.isEnabled then return end
 
+    -- Cancel any lingering watch state from a previous run
+    StopAllWatching()
+
     -- Reset state for new run
     wantsReminder = false
     storedKeyDescription = nil
@@ -68,13 +99,20 @@ local function OnChallengeModeStart()
     local ownedKeyLevel = C_MythicPlus.GetOwnedKeystoneLevel()
     if not ownedKeyLevel or ownedKeyLevel == 0 then return end
 
-    local activeKeystoneLevel = C_ChallengeMode.GetActiveKeystoneInfo()
+    local activeKeystoneLevel, _, _ = C_ChallengeMode.GetActiveKeystoneInfo()
     if not activeKeystoneLevel or activeKeystoneLevel == 0 then return end
 
     if ownedKeyLevel > activeKeystoneLevel then return end
 
-    -- Build key description (e.g. "Ara-Kara, City of Echoes +8")
-    storedKeyDescription = BuildOwnedKeyDescription()
+    -- If the player's keystone is for the same dungeon we just started, it's their
+    -- own depleted key (starting a key replaces it with a 1-level-lower copy for the
+    -- same dungeon).  No point reminding to reroll your own key.
+    local ownedMapID = C_MythicPlus.GetOwnedKeystoneMapID()
+    local activeMapID = C_ChallengeMode.GetActiveChallengeMapID()
+    if ownedMapID and activeMapID and ownedMapID == activeMapID then return end
+
+    -- Snapshot the key description for the confirmation popup
+    _, storedKeyDescription = ScanOwnedKeystone()
 
     -- Show confirmation popup with current key info
     ns.ShowConfirmPopup(storedKeyDescription)
@@ -101,10 +139,47 @@ local function OnChallengeModeCompleted()
 
         if onTime then
             ns.ShowBigReminder(storedKeyDescription)
+
+            -- Watch for the NPC reroll via loot chat messages.
+            -- The reroll message contains two keystone hyperlinks (old -> new).
+            watchingForReroll = true
+            eventFrame:RegisterEvent("CHAT_MSG_LOOT")
+
+            -- Safety timeout: stop watching after 10 minutes.
+            rerollWatchTimer = C_Timer.NewTimer(600, function()
+                StopAllWatching()
+            end)
         end
 
-        -- Reset for next run
+        -- Reset so we don't trigger again on a subsequent dungeon start
         wantsReminder = false
+    end)
+end
+
+-- Detect keystone reroll from the loot chat message.
+-- The reroll message contains two keystone hyperlinks (old -> new):
+-- "Your |cff...|Hkeystone:...|h[Mythic Keystone]|h|r was changed to |cff...|Hkeystone:...|h[Mythic Keystone]|h|r"
+local function OnChatMsgLoot(msg)
+    if not watchingForReroll then return end
+    if not KeyRerollReminder.isEnabled then
+        StopAllWatching()
+        return
+    end
+
+    -- Look for two |Hkeystone: hyperlinks in the message (language-independent).
+    local firstPos = msg:find("|Hkeystone:")
+    if not firstPos then return end
+    local secondPos = msg:find("|Hkeystone:", firstPos + 10)
+    if not secondPos then return end
+
+    -- Two keystone links found - this is a reroll.
+    StopAllWatching()
+
+    -- Short delay to let the bag update before scanning for the new key name.
+    C_Timer.After(0.5, function()
+        local _, newDescription = ScanOwnedKeystone()
+        ns.HideBigReminder()
+        ns.ShowRerolledKey(newDescription)
     end)
 end
 
@@ -113,12 +188,15 @@ local function OnEvent(self, event, ...)
         OnChallengeModeStart()
     elseif event == "CHALLENGE_MODE_COMPLETED" then
         OnChallengeModeCompleted()
+    elseif event == "CHAT_MSG_LOOT" then
+        OnChatMsgLoot(...)
     end
 end
 
 eventFrame:SetScript("OnEvent", OnEvent)
 eventFrame:RegisterEvent("CHALLENGE_MODE_START")
 eventFrame:RegisterEvent("CHALLENGE_MODE_COMPLETED")
+-- CHAT_MSG_LOOT is registered/unregistered dynamically per run
 
 --------------------------------------------------------------------------------
 -- Feature API Implementation
@@ -130,6 +208,8 @@ function KeyRerollReminder:Initialize()
     ns.HideConfirmPopup = QoL.Features.KeyRerollReminder_HideConfirmPopup
     ns.ShowBigReminder = QoL.Features.KeyRerollReminder_ShowBigReminder
     ns.HideBigReminder = QoL.Features.KeyRerollReminder_HideBigReminder
+    ns.ShowRerolledKey = QoL.Features.KeyRerollReminder_ShowRerolledKey
+    ns.HideRerolledKey = QoL.Features.KeyRerollReminder_HideRerolledKey
 
     -- Register popup callbacks
     if QoL.Features.KeyRerollReminder_SetPopupCallbacks then
@@ -147,10 +227,12 @@ end
 function KeyRerollReminder:Disable()
     self.isEnabled = false
     wantsReminder = false
+    StopAllWatching()
 
     -- Hide any active UI
     if ns.HideConfirmPopup then ns.HideConfirmPopup() end
     if ns.HideBigReminder then ns.HideBigReminder() end
+    if ns.HideRerolledKey then ns.HideRerolledKey() end
 end
 
 function KeyRerollReminder:GetDefaults()

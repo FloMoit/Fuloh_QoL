@@ -27,6 +27,12 @@ local L = {
     ["Click to dismiss"] = (locale == "frFR")
         and "(Cliquez pour fermer)"
         or "(Click to dismiss)",
+    ["Rerolled Title"] = (locale == "frFR")
+        and "Clé Rerollée"
+        or "Key Rerolled",
+    ["Rerolled Subtitle"] = (locale == "frFR")
+        and "Votre nouvelle clé est :"
+        or "Your new key is:",
 }
 
 --------------------------------------------------------------------------------
@@ -362,6 +368,123 @@ function HideBigReminder()
 end
 
 --------------------------------------------------------------------------------
+-- Rerolled-Key Toast
+-- A compact info frame shown when the player rerolls their key at the NPC.
+-- Distinct cyan/blue color scheme so it doesn't clash with the big reminder.
+--------------------------------------------------------------------------------
+
+local rerolledFrame = nil
+
+local function HideRerolledKey()
+    if not rerolledFrame or not rerolledFrame:IsShown() then return end
+    UIFrameFadeOut(rerolledFrame, 0.3, 1, 0)
+    C_Timer.After(0.3, function()
+        if rerolledFrame then rerolledFrame:Hide() end
+    end)
+end
+
+local function CreateRerolledKeyFrame()
+    local frame = CreateFrame("Frame", "Fuloh_QoL_KRR_RerolledFrame", UIParent, "BackdropTemplate")
+    frame:SetSize(400, 110)
+    -- Positioned in the upper portion of the screen, above the centre.
+    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 350)
+    frame:SetFrameStrata("DIALOG")
+    frame:SetClampedToScreen(true)
+    frame:EnableMouse(true)
+    frame:Hide()
+
+    -- Backdrop (dark blue tint)
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 2,
+        insets = { left = 2, right = 2, top = 2, bottom = 2 },
+    })
+    frame:SetBackdropColor(0.05, 0.08, 0.15, 0.95)
+    frame:SetBackdropBorderColor(0.2, 0.7, 1.0, 0.85)
+
+    -- Gradient overlay
+    local gradient = frame:CreateTexture(nil, "BACKGROUND", nil, 1)
+    gradient:SetTexture("Interface\\Buttons\\WHITE8x8")
+    gradient:SetGradient("VERTICAL",
+        CreateColor(0.05, 0.15, 0.25, 0.3),
+        CreateColor(0.02, 0.05, 0.1, 0.1)
+    )
+    gradient:SetAllPoints(frame)
+
+    -- Top accent bar (cyan)
+    local accentBar = frame:CreateTexture(nil, "ARTWORK")
+    accentBar:SetTexture("Interface\\Buttons\\WHITE8x8")
+    accentBar:SetHeight(3)
+    accentBar:SetPoint("TOPLEFT",  frame, "TOPLEFT",  2, -2)
+    accentBar:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -2, -2)
+    accentBar:SetVertexColor(0.2, 0.7, 1.0, 0.9)
+
+    -- Title
+    local title = frame:CreateFontString(nil, "OVERLAY")
+    title:SetFont("Fonts\\FRIZQT__.TTF", 18, "OUTLINE")
+    title:SetPoint("TOP", frame, "TOP", 0, -14)
+    title:SetTextColor(0.2, 0.9, 1.0)
+    title:SetText(L["Rerolled Title"])
+    title:SetJustifyH("CENTER")
+
+    -- Subtitle
+    local subtitle = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    subtitle:SetPoint("TOP", title, "BOTTOM", 0, -4)
+    subtitle:SetTextColor(0.7, 0.8, 0.9)
+    subtitle:SetText(L["Rerolled Subtitle"])
+    subtitle:SetJustifyH("CENTER")
+
+    -- New key name (prominent, white-cyan)
+    local keyText = frame:CreateFontString(nil, "OVERLAY")
+    keyText:SetFont("Fonts\\FRIZQT__.TTF", 20, "OUTLINE")
+    keyText:SetPoint("TOP", subtitle, "BOTTOM", 0, -6)
+    keyText:SetTextColor(1.0, 1.0, 1.0)
+    keyText:SetJustifyH("CENTER")
+    frame.keyText = keyText
+
+    -- Dismiss hint
+    local hint = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    hint:SetPoint("BOTTOM", frame, "BOTTOM", 0, 8)
+    hint:SetTextColor(0.4, 0.4, 0.5)
+    hint:SetText(L["Click to dismiss"])
+    hint:SetJustifyH("CENTER")
+
+    -- Hover effect
+    frame:SetScript("OnEnter", function(self)
+        self:SetBackdropBorderColor(0.3, 0.9, 1.0, 1.0)
+    end)
+    frame:SetScript("OnLeave", function(self)
+        self:SetBackdropBorderColor(0.2, 0.7, 1.0, 0.85)
+    end)
+
+    -- Click to dismiss
+    frame:SetScript("OnMouseDown", function()
+        HideRerolledKey()
+    end)
+
+    -- Auto-dismiss after 15 seconds
+    frame:SetScript("OnShow", function(self)
+        C_Timer.After(15, function()
+            if self:IsShown() then HideRerolledKey() end
+        end)
+    end)
+
+    return frame
+end
+
+local function ShowRerolledKey(keyDescription)
+    if not rerolledFrame then
+        rerolledFrame = CreateRerolledKeyFrame()
+    end
+
+    rerolledFrame.keyText:SetText(keyDescription or "?")
+    rerolledFrame:SetAlpha(0)
+    rerolledFrame:Show()
+    UIFrameFadeIn(rerolledFrame, 0.3, 0, 1)
+end
+
+--------------------------------------------------------------------------------
 -- Exports
 --------------------------------------------------------------------------------
 
@@ -369,6 +492,8 @@ QoL.Features.KeyRerollReminder_ShowConfirmPopup = ShowConfirmPopup
 QoL.Features.KeyRerollReminder_HideConfirmPopup = HideConfirmPopup
 QoL.Features.KeyRerollReminder_ShowBigReminder = ShowBigReminder
 QoL.Features.KeyRerollReminder_HideBigReminder = HideBigReminder
+QoL.Features.KeyRerollReminder_ShowRerolledKey = ShowRerolledKey
+QoL.Features.KeyRerollReminder_HideRerolledKey = HideRerolledKey
 QoL.Features.KeyRerollReminder_L = L
 
 -- Allow KeyRerollReminder.lua to set popup callbacks
