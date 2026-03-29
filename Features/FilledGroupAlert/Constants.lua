@@ -10,10 +10,7 @@ end
 
 local Constants = {}
 
--- LFG category ID for dungeons (not raids)
-Constants.CATEGORY_ID_DUNGEON = 2
-
--- Full dungeon group size
+-- Full group size
 Constants.DUNGEON_GROUP_SIZE = 5
 
 --------------------------------------------------------------------------------
