@@ -433,63 +433,63 @@ local function RegisterSettings()
 
     for _, name in ipairs(sortedFeatureNames) do
         local feature = QoL.RegisteredFeatures[name]
-        if feature.alwaysEnabled then goto continue end
-        local featureLabel = feature.label or feature.name
-        -- Create checkbox using Settings API
-        local checkboxSetting = Settings.RegisterProxySetting(
-            settingsCategory,
-            name .. "_Enabled",
-            Settings.VarType.Boolean,
-            featureLabel,
-            Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or false,
-            function() return Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled end,
-            function(value)
-                if value then
+        if not feature.alwaysEnabled then
+            local featureLabel = feature.label or feature.name
+            -- Create checkbox using Settings API
+            local checkboxSetting = Settings.RegisterProxySetting(
+                settingsCategory,
+                name .. "_Enabled",
+                Settings.VarType.Boolean,
+                featureLabel,
+                Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or false,
+                function() return Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled end,
+                function(value)
+                    if value then
+                        QoL:EnableFeature(name)
+                    else
+                        QoL:DisableFeature(name)
+                    end
+                end
+            )
+
+            -- Create checkbox frame manually for canvas layout
+            local checkbox = CreateFrame("CheckButton", nil, panel, "InterfaceOptionsCheckButtonTemplate")
+            checkbox:SetPoint("TOPLEFT", 20, yOffset)
+            checkbox.Text:SetText(featureLabel)
+
+            -- Bind checkbox to setting
+            checkbox:SetChecked(Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or false)
+            checkbox:SetScript("OnClick", function(self)
+                local isChecked = self:GetChecked()
+                if isChecked then
                     QoL:EnableFeature(name)
                 else
                     QoL:DisableFeature(name)
                 end
-            end
-        )
-
-        -- Create checkbox frame manually for canvas layout
-        local checkbox = CreateFrame("CheckButton", nil, panel, "InterfaceOptionsCheckButtonTemplate")
-        checkbox:SetPoint("TOPLEFT", 20, yOffset)
-        checkbox.Text:SetText(featureLabel)
-
-        -- Bind checkbox to setting
-        checkbox:SetChecked(Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled or false)
-        checkbox:SetScript("OnClick", function(self)
-            local isChecked = self:GetChecked()
-            if isChecked then
-                QoL:EnableFeature(name)
-            else
-                QoL:DisableFeature(name)
-            end
-        end)
-
-        -- Tooltip on hover
-        if feature.tooltip then
-            checkbox:SetScript("OnEnter", function(self)
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                GameTooltip:SetText(feature.tooltip, 1, 1, 1, 1, true)
-                GameTooltip:Show()
             end)
-            checkbox:SetScript("OnLeave", function()
-                GameTooltip:Hide()
-            end)
-        end
 
-        yOffset = yOffset - 30
+            -- Tooltip on hover
+            if feature.tooltip then
+                checkbox:SetScript("OnEnter", function(self)
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetText(feature.tooltip, 1, 1, 1, 1, true)
+                    GameTooltip:Show()
+                end)
+                checkbox:SetScript("OnLeave", function()
+                    GameTooltip:Hide()
+                end)
+            end
 
-        -- Hook for additional settings
-        if type(feature.OnSettingsUI) == "function" then
-            local newY = feature:OnSettingsUI(panel, yOffset)
-            if newY then
-                yOffset = newY
+            yOffset = yOffset - 30
+
+            -- Hook for additional settings
+            if type(feature.OnSettingsUI) == "function" then
+                local newY = feature:OnSettingsUI(panel, yOffset)
+                if newY then
+                    yOffset = newY
+                end
             end
         end
-        ::continue::
     end
 end
 
