@@ -63,11 +63,6 @@ local function OnGroupRosterUpdate()
     local db = GetDB()
     local Utils = QoL.Features.HelloWorld_Utils
 
-    -- Clear solo state cleans up any stale LFG merge flag
-    if (state.numMembers or 0) <= 1 then
-        pendingLFGMerge = false
-    end
-
     -- Check if we should greet and which channel to use
     local channel = Utils and Utils.GetGreetingChannel(oldState, state, true, pendingLFGJoin, pendingLFGMerge)
 
@@ -114,6 +109,14 @@ local function OnEvent(self, event, ...)
     elseif event == "LFG_PROPOSAL_FAILED" then
         -- Proposal timed out or someone declined; discard the flag.
         pendingLFGMerge = false
+    elseif event == "PLAYER_LEAVING_WORLD" then
+        -- LFR (Raid Finder) auto-places players without a proposal popup, so
+        -- LFG_PROPOSAL_SHOW never fires for it. Detect it here instead, before
+        -- the loading screen begins, by checking if the player is queued in RF.
+        -- Also covers LFD as a belt-and-suspenders in case PROPOSAL_SHOW was missed.
+        if GetLFGMode and (GetLFGMode(LE_LFG_CATEGORY_RF) or GetLFGMode(LE_LFG_CATEGORY_LFD)) then
+            pendingLFGMerge = true
+        end
     end
 end
 
@@ -124,6 +127,7 @@ eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("LFG_LIST_JOINED_GROUP")
 eventFrame:RegisterEvent("LFG_PROPOSAL_SHOW")
 eventFrame:RegisterEvent("LFG_PROPOSAL_FAILED")
+eventFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
 
 --------------------------------------------------------------------------------
 -- Feature API Implementation
