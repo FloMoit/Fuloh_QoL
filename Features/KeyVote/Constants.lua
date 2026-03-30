@@ -70,6 +70,7 @@ local Constants = {
         ["vote"]             = (locale == "frFR") and "vote" or "vote",
         ["votes"]            = (locale == "frFR") and "votes" or "votes",
         ["Close"]            = (locale == "frFR") and "Fermer" or "Close",
+        ["Click to teleport"] = (locale == "frFR") and "Cliquer pour se téléporter" or "Click to teleport",
         ["remaining"]        = (locale == "frFR") and "restantes" or "remaining",
         ["Already active"]   = (locale == "frFR") and "Un vote est déjà en cours." or "A vote is already in progress.",
         ["Not in group"]     = (locale == "frFR") and "Vous devez être dans un groupe." or "You must be in a group.",

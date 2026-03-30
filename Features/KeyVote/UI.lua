@@ -520,8 +520,8 @@ local function GetResultIcon(parent, index)
     local col = CreateFrame("Frame", nil, parent)
     col:SetSize(80, RUI.ICON_SIZE_WINNER + 50)
 
-    -- Icon frame (with border)
-    local iconFrame = CreateFrame("Frame", nil, col, "BackdropTemplate")
+    -- Icon frame (with border) — Button so it can receive click/hover events
+    local iconFrame = CreateFrame("Button", nil, col, "BackdropTemplate")
     iconFrame:SetPoint("TOP", col, "TOP", 0, 0)
     iconFrame:SetBackdrop({
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -619,10 +619,35 @@ local function ShowResults(results)
         col.icon:SetTexture(resolvedTexture or "Interface\\Icons\\INV_Misc_QuestionMark")
 
         -- Border color
-        if isWinner then
-            col.iconFrame:SetBackdropBorderColor(0.9, 0.7, 0.2, 1.0)
+        local normalBorderColor = isWinner and { 0.9, 0.7, 0.2, 1.0 } or { 0.3, 0.3, 0.4, 0.6 }
+        col.iconFrame:SetBackdropBorderColor(unpack(normalBorderColor))
+
+        -- Teleport on icon click
+        local GetTeleportSpell = QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpellByMapID
+        local HasTeleport      = QoL.Features.JoinedGroupReminder_HasDungeonTeleport
+        local spellID = GetTeleportSpell and GetTeleportSpell(r.mapID)
+        local canTeleport = spellID and HasTeleport and HasTeleport(spellID)
+
+        if canTeleport then
+            col.iconFrame:EnableMouse(true)
+            col.iconFrame:SetScript("OnClick", function()
+                CastSpellByID(spellID)
+            end)
+            col.iconFrame:SetScript("OnEnter", function(self)
+                self:SetBackdropBorderColor(0.3, 0.8, 1.0, 1.0)
+                GameTooltip:SetOwner(self, "ANCHOR_TOP")
+                GameTooltip:SetText(L["Click to teleport"], 1, 1, 1)
+                GameTooltip:Show()
+            end)
+            col.iconFrame:SetScript("OnLeave", function(self)
+                self:SetBackdropBorderColor(unpack(normalBorderColor))
+                GameTooltip:Hide()
+            end)
         else
-            col.iconFrame:SetBackdropBorderColor(0.3, 0.3, 0.4, 0.6)
+            col.iconFrame:EnableMouse(false)
+            col.iconFrame:SetScript("OnClick", nil)
+            col.iconFrame:SetScript("OnEnter", nil)
+            col.iconFrame:SetScript("OnLeave", nil)
         end
 
         -- Label
