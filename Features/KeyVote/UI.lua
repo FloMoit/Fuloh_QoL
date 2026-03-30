@@ -520,8 +520,9 @@ local function GetResultIcon(parent, index)
     local col = CreateFrame("Frame", nil, parent)
     col:SetSize(80, RUI.ICON_SIZE_WINNER + 50)
 
-    -- Icon frame (with border) — Button so it can receive click/hover events
-    local iconFrame = CreateFrame("Button", nil, col, "BackdropTemplate")
+    -- Icon frame (with border) — SecureActionButton so spells can be cast on click
+    local iconFrame = CreateFrame("Button", nil, col, "SecureActionButtonTemplate,BackdropTemplate")
+    iconFrame:RegisterForClicks("AnyUp")
     iconFrame:SetPoint("TOP", col, "TOP", 0, 0)
     iconFrame:SetBackdrop({
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -630,13 +631,13 @@ local function ShowResults(results)
 
         if canTeleport then
             col.iconFrame:EnableMouse(true)
-            col.iconFrame:SetScript("OnClick", function()
-                CastSpellByID(spellID)
-            end)
+            col.iconFrame:SetAttribute("type", "spell")
+            col.iconFrame:SetAttribute("spell", spellID)
             col.iconFrame:SetScript("OnEnter", function(self)
                 self:SetBackdropBorderColor(0.3, 0.8, 1.0, 1.0)
                 GameTooltip:SetOwner(self, "ANCHOR_TOP")
-                GameTooltip:SetText(L["Click to teleport"], 1, 1, 1)
+                GameTooltip:SetSpellByID(spellID)
+                GameTooltip:AddLine(L["Click to teleport"], 0.5, 0.5, 0.5)
                 GameTooltip:Show()
             end)
             col.iconFrame:SetScript("OnLeave", function(self)
@@ -645,7 +646,8 @@ local function ShowResults(results)
             end)
         else
             col.iconFrame:EnableMouse(false)
-            col.iconFrame:SetScript("OnClick", nil)
+            col.iconFrame:SetAttribute("type", nil)
+            col.iconFrame:SetAttribute("spell", nil)
             col.iconFrame:SetScript("OnEnter", nil)
             col.iconFrame:SetScript("OnLeave", nil)
         end
