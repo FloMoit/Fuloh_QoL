@@ -66,9 +66,14 @@ local function OnGroupRosterUpdate()
     -- Check if we should greet and which channel to use
     local channel = Utils and Utils.GetGreetingChannel(oldState, state, true, pendingLFGJoin, pendingLFGMerge)
 
-    -- Clear flags after checking
+    -- Always clear the join flag.
+    -- Only clear the merge flag when a greeting was actually triggered. If nil was
+    -- returned while the flag was set, the player isn't in the instance yet and the
+    -- flag must survive until PLAYER_ENTERING_WORLD delivers the real roster.
     pendingLFGJoin = false
-    pendingLFGMerge = false
+    if channel then
+        pendingLFGMerge = false
+    end
 
     if channel then
         -- Multi-second delay (5 to 8 seconds) to make it look natural

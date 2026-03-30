@@ -37,13 +37,21 @@ end
 function Utils.GetGreetingChannel(oldState, newState, enabled, isLFGJoin, isLFGMerge)
     if not enabled then return nil end
 
+    -- LFG merge (Dungeon Finder / LFR): two pre-formed groups were matched together.
+    -- Must be checked before isSolo: GROUP_ROSTER_UPDATE can fire with numMembers=0
+    -- during the loading screen, which would otherwise kill the flag prematurely.
+    -- Also requires inInst=true: if the roster update fires before the loading screen,
+    -- INSTANCE_CHAT doesn't exist yet. Wait for PLAYER_ENTERING_WORLD instead.
+    -- Returning nil here without a channel signals the caller to preserve the flag.
+    if isLFGMerge then
+        if newState.inInst and (newState.numMembers or 0) > 1 then
+            return "INSTANCE_CHAT"
+        end
+        return nil
+    end
+
     local isSolo = (newState.numMembers or 0) <= 1
     if isSolo then return nil end
-
-    -- LFG merge (Dungeon Finder / LFR): two pre-formed groups were matched together.
-    -- State transitions don't reliably catch this (we were already in a group),
-    -- so bypass them and greet unconditionally.
-    if isLFGMerge then return "INSTANCE_CHAT" end
 
     -- Trigger conditions:
     -- 1. We just joined a group category (Home or Instance)
