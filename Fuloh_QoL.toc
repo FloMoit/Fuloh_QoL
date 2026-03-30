@@ -2,8 +2,8 @@
 ## Title: Fuloh's QoL
 ## Author: Fuloh
 ## Version: 1.1.0
-## Notes: Modular QoL hub. Features: Joined Group Reminder, Hello World, Auto GG, Key Reroll Reminder, Filled Group Alert & Key Vote.
-## Notes-frFR: Groupe de feature de qualité de vie. Inclut : Rappel de groupe rejoint, Auto-salutations, Auto GG, Rappel de reroll de clé, Alerte groupe complet & Vote de Clé.
+## Notes: Modular QoL hub. Features: Joined Group Reminder, Hello World, Auto GG, Key Reroll Reminder, Filled Group Alert, Key Vote & Mage Food Reminder.
+## Notes-frFR: Groupe de feature de qualité de vie. Inclut : Rappel de groupe rejoint, Auto-salutations, Auto GG, Rappel de reroll de clé, Alerte groupe complet, Vote de Clé & Rappel de nourriture de mage.
 ## IconTexture: Interface\AddOns\Fuloh_QoL\icon.tga
 ## SavedVariables: Fuloh_QoLDB
 
@@ -31,3 +31,7 @@ Features\KeyVote\Constants.lua
 Features\KeyVote\Comms.lua
 Features\KeyVote\UI.lua
 Features\KeyVote\KeyVote.lua
+
+Features\MageFoodReminder\Constants.lua
+Features\MageFoodReminder\UI.lua
+Features\MageFoodReminder\MageFoodReminder.lua
