@@ -32,17 +32,22 @@ end
 -- @param newState table - { inHome: boolean, inInst: boolean, numMembers: number }
 -- @param enabled boolean - whether the addon is enabled
 -- @param isLFGJoin boolean - whether the update was triggered by an LFG group join event
+-- @param isLFGMerge boolean - whether triggered by a Dungeon Finder / LFR proposal succeeding
 -- @return string|nil - The chat channel to use, or nil if shouldn't greet
-function Utils.GetGreetingChannel(oldState, newState, enabled, isLFGJoin)
+function Utils.GetGreetingChannel(oldState, newState, enabled, isLFGJoin, isLFGMerge)
     if not enabled then return nil end
 
     local isSolo = (newState.numMembers or 0) <= 1
     if isSolo then return nil end
 
+    -- LFG merge (Dungeon Finder / LFR): two pre-formed groups were matched together.
+    -- State transitions don't reliably catch this (we were already in a group),
+    -- so bypass them and greet unconditionally.
+    if isLFGMerge then return "INSTANCE_CHAT" end
+
     -- Trigger conditions:
     -- 1. We just joined a group category (Home or Instance)
     -- 2. We were a "group of 1" and someone else joined
-    -- 3. Explicit LFG join event (even if already in a group)
     local groupJoined = newState.inHome and not oldState.inHome
     local instJoined = newState.inInst and not oldState.inInst
     local firstMemberJoined = (newState.numMembers or 0) > 1 and (oldState.numMembers or 0) <= 1

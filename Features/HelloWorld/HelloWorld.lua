@@ -21,6 +21,7 @@ local HelloWorld = {
 local state = { inHome = false, inInst = false, numMembers = 0 }
 local eventFrame = CreateFrame("Frame")
 local pendingLFGJoin = false
+local pendingLFGMerge = false
 
 
 -- Database accessor
@@ -62,13 +63,17 @@ local function OnGroupRosterUpdate()
     local db = GetDB()
     local Utils = QoL.Features.HelloWorld_Utils
 
-    -- Check if we should greet and which channel to use
-    local channel = Utils and Utils.GetGreetingChannel(oldState, state, true, pendingLFGJoin)
-    
-    -- Clear the flag after checking
-    if pendingLFGJoin then
-        pendingLFGJoin = false
+    -- Clear solo state cleans up any stale LFG merge flag
+    if (state.numMembers or 0) <= 1 then
+        pendingLFGMerge = false
     end
+
+    -- Check if we should greet and which channel to use
+    local channel = Utils and Utils.GetGreetingChannel(oldState, state, true, pendingLFGJoin, pendingLFGMerge)
+
+    -- Clear flags after checking
+    pendingLFGJoin = false
+    pendingLFGMerge = false
 
     if channel then
         -- Multi-second delay (5 to 8 seconds) to make it look natural
@@ -102,6 +107,10 @@ local function OnEvent(self, event, ...)
     elseif event == "LFG_LIST_JOINED_GROUP" then
         pendingLFGJoin = true
         OnGroupRosterUpdate()
+    elseif event == "LFG_PROPOSAL_SUCCEEDED" then
+        pendingLFGMerge = true
+        -- Roster isn't updated yet at this point; wait for GROUP_ROSTER_UPDATE
+        -- or PLAYER_ENTERING_WORLD (loading screen case) to fire the greeting.
     end
 end
 
@@ -110,6 +119,7 @@ eventFrame:SetScript("OnEvent", OnEvent)
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("LFG_LIST_JOINED_GROUP")
+eventFrame:RegisterEvent("LFG_PROPOSAL_SUCCEEDED")
 
 --------------------------------------------------------------------------------
 -- Feature API Implementation
