@@ -107,10 +107,13 @@ local function OnEvent(self, event, ...)
     elseif event == "LFG_LIST_JOINED_GROUP" then
         pendingLFGJoin = true
         OnGroupRosterUpdate()
-    elseif event == "LFG_PROPOSAL_SUCCEEDED" then
+    elseif event == "LFG_PROPOSAL_SHOW" then
+        -- Set flag early — before roster changes and before any loading screen.
+        -- GROUP_ROSTER_UPDATE or PLAYER_ENTERING_WORLD will consume it.
         pendingLFGMerge = true
-        -- Roster isn't updated yet at this point; wait for GROUP_ROSTER_UPDATE
-        -- or PLAYER_ENTERING_WORLD (loading screen case) to fire the greeting.
+    elseif event == "LFG_PROPOSAL_FAILED" then
+        -- Proposal timed out or someone declined; discard the flag.
+        pendingLFGMerge = false
     end
 end
 
@@ -119,7 +122,8 @@ eventFrame:SetScript("OnEvent", OnEvent)
 eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("LFG_LIST_JOINED_GROUP")
-eventFrame:RegisterEvent("LFG_PROPOSAL_SUCCEEDED")
+eventFrame:RegisterEvent("LFG_PROPOSAL_SHOW")
+eventFrame:RegisterEvent("LFG_PROPOSAL_FAILED")
 
 --------------------------------------------------------------------------------
 -- Feature API Implementation
