@@ -13,6 +13,7 @@ end
 local KeyVote = {
     name = "KeyVote",
     label = "Key Vote",
+    tooltip = "Opens a group vote to decide which Mythic+ keystone to run next.",
     shortcut = "vote",
     isEnabled = false,
 }

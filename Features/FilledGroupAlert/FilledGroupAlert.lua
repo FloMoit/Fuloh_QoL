@@ -16,6 +16,7 @@ local DUNGEON_GROUP_SIZE = Constants.DUNGEON_GROUP_SIZE
 local FilledGroupAlert = {
     name = "FilledGroupAlert",
     label = "Filled Group Alert",
+    tooltip = "Plays a sound alert when your group reaches 5 members.",
     shortcut = "fga",
     isEnabled = false,
 }

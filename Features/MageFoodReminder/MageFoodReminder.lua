@@ -11,6 +11,7 @@ end
 local MageFoodReminder = {
     name      = "MageFoodReminder",
     label     = "Mage Food Reminder",
+    tooltip   = "Reminds healers to stock Mage Food before entering a Mythic dungeon.",
     shortcut  = "mfr",
     isEnabled = false,
 }

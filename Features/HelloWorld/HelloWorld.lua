@@ -12,6 +12,7 @@ end
 local HelloWorld = {
     name = "HelloWorld",
     label = "Auto greeting in party",
+    tooltip = "Automatically sends a greeting message in party chat when you join a group.",
     shortcut = "hello",
     isEnabled = false,
 }

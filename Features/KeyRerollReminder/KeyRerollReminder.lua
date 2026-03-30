@@ -12,6 +12,7 @@ end
 local KeyRerollReminder = {
     name = "KeyRerollReminder",
     label = "Key Reroll Reminder",
+    tooltip = "Shows a reminder to reroll your Mythic+ key after completing a timed run.",
     shortcut = "krr",
     isEnabled = false,
 }

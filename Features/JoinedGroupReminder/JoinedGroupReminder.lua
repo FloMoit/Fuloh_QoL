@@ -11,6 +11,7 @@ end
 -- Create feature object
 local JGR = {
     name = "JoinedGroupReminder",
+    tooltip = "Displays a banner with dungeon info when you join a Mythic+ group via LFG.",
     shortcut = "jgr",
     isEnabled = false,
 }

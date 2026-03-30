@@ -12,6 +12,7 @@ end
 local GGGuys = {
     name = "GGGuys",
     label = "Auto GG on timed M+",
+    tooltip = "Automatically says GG in party chat when a Mythic+ dungeon is completed in time.",
     shortcut = "gg",
     isEnabled = false,
 }

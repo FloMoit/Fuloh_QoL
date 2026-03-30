@@ -461,6 +461,18 @@ local function RegisterSettings()
             end
         end)
 
+        -- Tooltip on hover
+        if feature.tooltip then
+            checkbox:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:SetText(feature.tooltip, 1, 1, 1, 1, true)
+                GameTooltip:Show()
+            end)
+            checkbox:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
+        end
+
         yOffset = yOffset - 30
 
         -- Hook for additional settings
