@@ -23,6 +23,27 @@ local onVoteSubmit = nil     -- function(selectedKeys) called when user clicks V
 local onVoteClose = nil      -- function() called when user closes the voting popup
 local onResultsDismiss = nil -- function() called when user dismisses results
 
+-- Database accessor
+local function GetDB()
+    return Fuloh_QoLDB and Fuloh_QoLDB.KeyVote or {}
+end
+
+local function SavePosition(key, frame)
+    local db = GetDB()
+    local point, _, relativePoint, x, y = frame:GetPoint()
+    db[key] = { point = point, relativePoint = relativePoint, x = x, y = y }
+end
+
+local function ApplyPosition(key, frame, defaultX, defaultY)
+    local db = GetDB()
+    local pos = db[key]
+    if pos then
+        frame:SetPoint(pos.point, UIParent, pos.relativePoint, pos.x, pos.y)
+    else
+        frame:SetPoint("CENTER", UIParent, "CENTER", defaultX, defaultY)
+    end
+end
+
 -- Forward declaration
 local UpdateVoteButtonState
 
@@ -36,11 +57,18 @@ local checkboxRows = {}      -- reusable row frames
 local function CreateVotingFrame()
     local frame = CreateFrame("Frame", "Fuloh_QoL_KV_VotingFrame", UIParent, "BackdropTemplate")
     frame:SetSize(VUI.WIDTH, VUI.HEIGHT)
-    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 50)
+    ApplyPosition("votingPosition", frame, 0, 50)
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
     frame:EnableMouse(true)
     frame:EnableKeyboard(true)
+    frame:SetMovable(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        SavePosition("votingPosition", self)
+    end)
     frame:Hide()
 
     -- Backdrop
@@ -431,10 +459,17 @@ local pulseAnimGroup = nil
 local function CreateResultsFrame()
     local frame = CreateFrame("Frame", "Fuloh_QoL_KV_ResultsFrame", UIParent, "BackdropTemplate")
     frame:SetSize(RUI.WIDTH, RUI.HEIGHT)
-    frame:SetPoint("CENTER", UIParent, "CENTER", 0, 50)
+    ApplyPosition("resultsPosition", frame, 0, 50)
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
     frame:EnableMouse(true)
+    frame:SetMovable(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
+    frame:SetScript("OnDragStop", function(self)
+        self:StopMovingOrSizing()
+        SavePosition("resultsPosition", self)
+    end)
     frame:Hide()
 
     -- Backdrop

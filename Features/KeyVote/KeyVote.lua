@@ -627,6 +627,8 @@ end
 function KeyVote:GetDefaults()
     return {
         enableChatTrigger = true,
+        votingPosition = nil,
+        resultsPosition = nil,
     }
 end
 
