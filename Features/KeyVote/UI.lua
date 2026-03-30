@@ -477,14 +477,34 @@ local function CreateResultsFrame()
     iconContainer:SetSize(RUI.WIDTH - 40, RUI.ICON_SIZE_WINNER + 50)
     frame.iconContainer = iconContainer
 
-    -- Dismiss hint
-    local hint = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    hint:SetPoint("BOTTOM", frame, "BOTTOM", 0, 10)
-    hint:SetTextColor(0.4, 0.4, 0.5)
-    hint:SetText(L["Click to dismiss"])
+    -- Close button
+    local closeBtn = CreateFrame("Button", nil, frame, "BackdropTemplate")
+    closeBtn:SetSize(80, 28)
+    closeBtn:SetPoint("BOTTOM", frame, "BOTTOM", 0, 10)
+    closeBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 },
+    })
+    closeBtn:SetBackdropColor(0.25, 0.08, 0.08, 0.9)
+    closeBtn:SetBackdropBorderColor(0.6, 0.2, 0.2, 0.8)
 
-    -- Click to dismiss
-    frame:SetScript("OnMouseDown", function()
+    local closeBtnText = closeBtn:CreateFontString(nil, "OVERLAY")
+    closeBtnText:SetFont("Fonts\\FRIZQT__.TTF", 13, "OUTLINE")
+    closeBtnText:SetPoint("CENTER")
+    closeBtnText:SetText(L["Close"])
+    closeBtnText:SetTextColor(1.0, 0.4, 0.4)
+
+    closeBtn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(0.4, 0.1, 0.1, 0.95)
+        self:SetBackdropBorderColor(0.9, 0.3, 0.3, 1.0)
+    end)
+    closeBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(0.25, 0.08, 0.08, 0.9)
+        self:SetBackdropBorderColor(0.6, 0.2, 0.2, 0.8)
+    end)
+    closeBtn:SetScript("OnClick", function()
         if onResultsDismiss then onResultsDismiss() end
     end)
 

@@ -69,7 +69,7 @@ local Constants = {
         ["Winner"]           = (locale == "frFR") and "GAGNANT" or "WINNER",
         ["vote"]             = (locale == "frFR") and "vote" or "vote",
         ["votes"]            = (locale == "frFR") and "votes" or "votes",
-        ["Click to dismiss"] = (locale == "frFR") and "(Cliquez pour fermer)" or "(Click to dismiss)",
+        ["Close"]            = (locale == "frFR") and "Fermer" or "Close",
         ["remaining"]        = (locale == "frFR") and "restantes" or "remaining",
         ["Already active"]   = (locale == "frFR") and "Un vote est déjà en cours." or "A vote is already in progress.",
         ["Not in group"]     = (locale == "frFR") and "Vous devez être dans un groupe." or "You must be in a group.",
