@@ -16,6 +16,7 @@ local KeyVote = {
     tooltip = "Opens a group vote to decide which Mythic+ keystone to run next.",
     shortcut = "vote",
     isEnabled = false,
+    alwaysEnabled = true,
 }
 
 -- Constants and Comms references (populated in Initialize)
@@ -625,7 +626,6 @@ end
 
 function KeyVote:GetDefaults()
     return {
-        enabled = false,
         enableChatTrigger = true,
     }
 end
@@ -637,8 +637,6 @@ function KeyVote:HandleCommand(args)
         StartVote()
     elseif cmd == "cancel" then
         CancelVote()
-    elseif cmd == "toggle" then
-        QoL:ToggleFeature("KeyVote")
     elseif cmd == "test" then
         TestVotingUI()
     elseif cmd == "testresult" then
@@ -647,7 +645,6 @@ function KeyVote:HandleCommand(args)
         Print("Commands:")
         print("  /fuloh vote          - Start a key vote")
         print("  /fuloh vote cancel   - Cancel the current vote")
-        print("  /fuloh vote toggle   - Toggle feature on/off")
         print("  /fuloh vote test     - Preview the voting UI")
         print("  /fuloh vote testresult - Preview the results UI")
     else

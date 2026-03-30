@@ -279,8 +279,9 @@ local function InitializeFeatures()
             PrintError("Failed to initialize " .. name .. ": " .. tostring(err))
         end
 
-        -- Enable if enabled in settings
-        if Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled then
+        -- Enable if always-on, or if enabled in settings
+        local shouldEnable = feature.alwaysEnabled or (Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled)
+        if shouldEnable then
             success, err = pcall(function()
                 feature:Enable()
             end)
@@ -312,9 +313,14 @@ local function ShowFeatureList()
     Print("Registered features:")
 
     for name, feature in pairs(QoL.RegisteredFeatures) do
-        local enabled = Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled
-        local status = enabled and COLOR_SUCCESS .. "Enabled" or COLOR_ERROR .. "Disabled"
-        Print("  " .. (feature.label or name) .. " [" .. feature.shortcut .. "] - " .. status .. COLOR_RESET)
+        local status
+        if feature.alwaysEnabled then
+            status = COLOR_SUCCESS .. "Always On" .. COLOR_RESET
+        else
+            local enabled = Fuloh_QoLDB[name] and Fuloh_QoLDB[name].enabled
+            status = enabled and COLOR_SUCCESS .. "Enabled" .. COLOR_RESET or COLOR_ERROR .. "Disabled" .. COLOR_RESET
+        end
+        Print("  " .. (feature.label or name) .. " [" .. feature.shortcut .. "] - " .. status)
     end
 end
 
@@ -427,6 +433,7 @@ local function RegisterSettings()
 
     for _, name in ipairs(sortedFeatureNames) do
         local feature = QoL.RegisteredFeatures[name]
+        if feature.alwaysEnabled then goto continue end
         local featureLabel = feature.label or feature.name
         -- Create checkbox using Settings API
         local checkboxSetting = Settings.RegisterProxySetting(
@@ -482,6 +489,7 @@ local function RegisterSettings()
                 yOffset = newY
             end
         end
+        ::continue::
     end
 end
 
