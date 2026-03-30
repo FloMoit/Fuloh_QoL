@@ -52,6 +52,8 @@ local Constants = {
         ["Unknown Dungeon"] = (GetLocale() == "frFR") and "Donjon inconnu" or "Unknown Dungeon",
         ["Close"] = (GetLocale() == "frFR") and "Fermer" or "Close",
         ["LFG Group"] = (GetLocale() == "frFR") and "Groupe recherche" or "LFG Group",
+        ["Joined group"] = (GetLocale() == "frFR") and "Groupe rejoint" or "Joined group",
+        ["Group updated"] = (GetLocale() == "frFR") and "Groupe mis à jour" or "Group updated",
     },
 }
 

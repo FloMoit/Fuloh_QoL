@@ -41,6 +41,14 @@ local function DebugPrint(...)
     end
 end
 
+-- Print group info to chat (local only, not sent to any channel)
+local function PrintGroupInfo(dungeonName, groupName, isUpdate)
+    local dungeon = "|cffffff00" .. (dungeonName or L["Unknown Dungeon"]) .. "|r"
+    local group = (groupName and groupName ~= "") and (' - "' .. groupName .. '"') or ""
+    local label = isUpdate and L["Group updated"] or L["Joined group"]
+    print("|cff00bfff[JGR]|r " .. label .. ": " .. dungeon .. group)
+end
+
 -- Clear cached state
 function ns.ClearCachedState()
     currentReminderData = nil
@@ -151,6 +159,7 @@ local function OnLFGListJoinedGroup(searchResultID)
             mapID = cached.mapID,
         }
 
+        PrintGroupInfo(activityName, groupName, false)
         ns.ShowReminder(activityName, groupName, cached.mapID)
     else
         DebugPrint("  No data found for this searchResultID!")
@@ -248,10 +257,11 @@ local function OnEvent(self, event, ...)
     elseif event == "LFG_LIST_ACTIVE_ENTRY_UPDATE" then
         local oldData = currentReminderData
         if UpdateFromActiveEntry() then
-            -- If the listing changed (new dungeon or new group name), reset dismiss
+            -- If the listing changed (new dungeon or new group name), reset dismiss and notify
             if oldData and (oldData.dungeonName ~= currentReminderData.dungeonName
                         or oldData.groupName ~= currentReminderData.groupName) then
                 dismissedByUser = false
+                PrintGroupInfo(currentReminderData.dungeonName, currentReminderData.groupName, true)
             end
             if not dismissedByUser then
                 ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName, currentReminderData.mapID)
