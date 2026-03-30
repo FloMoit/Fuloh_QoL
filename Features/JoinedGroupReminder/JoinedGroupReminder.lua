@@ -25,6 +25,7 @@ local applicationCache = {}
 local currentReminderData = nil
 local wasInGroup = false
 local dismissedByUser = false
+local recentlyJoined = false
 local debugMode = false
 local eventFrame = CreateFrame("Frame")
 local applyToGroupHooked = false
@@ -115,6 +116,7 @@ local function OnLFGListJoinedGroup(searchResultID)
 
     -- New group joined, clear any previous dismiss
     dismissedByUser = false
+    recentlyJoined = true
 
     local cached = searchResultID and applicationCache[searchResultID]
 
@@ -258,11 +260,13 @@ local function OnEvent(self, event, ...)
         local oldData = currentReminderData
         if UpdateFromActiveEntry() then
             -- If the listing changed (new dungeon or new group name), reset dismiss and notify
-            if oldData and (oldData.dungeonName ~= currentReminderData.dungeonName
+            -- Skip the update print if we just joined (LFG_LIST_JOINED_GROUP already printed)
+            if not recentlyJoined and oldData and (oldData.dungeonName ~= currentReminderData.dungeonName
                         or oldData.groupName ~= currentReminderData.groupName) then
                 dismissedByUser = false
                 PrintGroupInfo(currentReminderData.dungeonName, currentReminderData.groupName, true)
             end
+            recentlyJoined = false
             if not dismissedByUser then
                 ns.ShowReminder(currentReminderData.dungeonName, currentReminderData.groupName, currentReminderData.mapID)
             end
