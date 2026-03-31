@@ -1,927 +1,206 @@
 # Fuloh's Quality of Life Hub
 
-A consolidated addon for World of Warcraft that combines multiple QoL features into a single, manageable hub with per-feature toggles.
+A consolidated WoW addon combining multiple QoL features with per-feature toggles.
 Obviously made with AI.
 
-## 📚 Context7 Documentation
+## Context7 Documentation
 This project is configured to use **Context7** for up-to-date WoW API documentation.
 - **Workflow:** See [.agent/workflows/use-wow-api-context7.md](.agent/workflows/use-wow-api-context7.md) for usage.
-- **Prompting:** Use the phrase `use context7` or `use library wowwiki-archive_fandom_wiki_world_of_warcraft_api` in your prompts to trigger live documentation lookups.
+- **Prompting:** Use `use context7` or `use library wowwiki-archive_fandom_wiki_world_of_warcraft_api` to trigger live documentation lookups.
 - **API Key:** Pre-configured in [.cursorrules](.cursorrules).
-
-## Table of Contents
-- [Features](#features)
-- [Installation](#installation)
-- [User Guide](#user-guide)
-- [Architecture](#architecture)
-- [Developer Guide](#developer-guide)
-- [Technical Reference](#technical-reference)
 
 ---
 
 ## Features
 
 ### JoinedGroupReminder
-Displays a reminder banner when joining a Mythic Plus group via LFG, showing the dungeon name and group name. Includes teleport buttons for dungeons where you have Hero's Path teleports available.
+Banner when joining a Mythic+ group via LFG, with one-click teleport if available.
 
-**Commands:**
-- `/fuloh jgr show` - Show or refresh reminder
-- `/fuloh jgr hide` - Hide reminder
-- `/fuloh jgr test` - Show test reminder
-- `/fuloh jgr debug` - Toggle debug mode
-
-**Features:**
-- Automatic reminder when joining LFG groups
-- Draggable banner (position saved)
-- One-click dungeon teleport button (if available)
-- Auto-hides when M+ starts or when leaving group
-- Persists across `/reload`
+| Command | Description |
+|---|---|
+| `/fuloh jgr show` | Show/refresh reminder |
+| `/fuloh jgr hide` | Hide reminder |
+| `/fuloh jgr test` | Show test reminder |
+| `/fuloh jgr debug` | Toggle debug mode |
 
 ### GGGuys (Auto GG)
-Automatically celebrates timed Mythic+ completions in party chat.
+Sends a random congratulations message in party chat on timed M+ completions (8–15 s delay).
 
-**Commands:**
-- `/fuloh gg toggle` - Toggle auto-GG on/off
-- `/fuloh gg help` - Show help
-
-**Features:**
-- Sends a random congratulations message when a M+ is completed in time
-- Natural, randomized delay (8-15 seconds) to feel human
-- Customizable message list
+| Command | Description |
+|---|---|
+| `/fuloh gg toggle` | Toggle on/off |
+| `/fuloh gg help` | Show help |
 
 ### KeyRerollReminder
-Reminds you to reroll your keystone after a timed Mythic+ run.
+Opt-in popup at dungeon start; pulses center-screen on timed completion to remind you to reroll.
 
-**Commands:**
-- `/fuloh krr toggle` - Toggle feature on/off
-- `/fuloh krr test` - Show test reminder
-- `/fuloh krr help` - Show help
-
-**Features:**
-- Opt-in per run: popup asks at dungeon start if you want a reminder
-- Shows your current key (dungeon + level) in the popup
-- Only triggers when your key level is <= the dungeon level (reroll makes sense)
-- Large, pulsing center-screen reminder on timed completion
-- Click to dismiss
+| Command | Description |
+|---|---|
+| `/fuloh krr toggle` | Toggle on/off |
+| `/fuloh krr test` | Show test reminder |
+| `/fuloh krr help` | Show help |
 
 ### HelloWorld
-Automatically greets party members when joining a group with customizable greeting messages.
+Auto-greets party members when joining a group.
 
-**Commands:**
-- `/fuloh hello` - Open greeting settings
-- `/fuloh hello toggle` - Toggle auto-greeting on/off
-- `/fuloh hello settings` - Open greeting customization panel
-- `/fuloh hello help` - Show help
+| Command | Description |
+|---|---|
+| `/fuloh hello toggle` | Toggle on/off |
+| `/fuloh hello settings` | Open customization panel |
+| `/fuloh hello help` | Show help |
 
-**Features:**
-- Random greeting selection from custom list
-- Natural delay (4-6 seconds) before greeting
-- Smart channel detection (PARTY vs INSTANCE_CHAT)
+### FilledGroupAlert
+Plays a sound when your group reaches 5 members.
 
-- Customizable greeting messages
+| Command | Description |
+|---|---|
+| `/fuloh fga toggle` | Toggle on/off |
+| `/fuloh fga test` | Trigger test sound |
+| `/fuloh fga debug` | Toggle debug mode |
+| `/fuloh fga help` | Show help |
+
+### KeyVote
+Polls the party on which key to run. Uses addon messages for cross-client sync; also responds to `!vote` / `!keyvote` in party chat.
+
+| Command | Description |
+|---|---|
+| `/fuloh vote start` | Start a key vote |
+| `/fuloh vote cancel` | Cancel current vote |
+| `/fuloh vote test` | Preview vote UI |
+| `/fuloh vote testresult` | Preview results UI |
+| `/fuloh vote help` | Show help |
+
+### MageFoodReminder
+Reminds healers to stock Mage Food before entering a Mythic dungeon.
+
+| Command | Description |
+|---|---|
+| `/fuloh mfr test` | Show test reminder |
+| `/fuloh mfr help` | Show help |
 
 ---
 
 ## Installation
 
-1. Extract the `Fuloh_QoL` folder to `World of Warcraft\_retail_\Interface\AddOns\`
-2. **If migrating from standalone addons:**
-   - Keep your old `JoinedGroupReminder` and `HelloWorld` folders initially
-   - Launch the game - your settings will auto-migrate on first load
-   - After confirming settings migrated correctly, you can disable or delete the old addons
+1. Extract `Fuloh_QoL` to `World of Warcraft\_retail_\Interface\AddOns\`
+2. **Migrating from standalone addons** (JoinedGroupReminder / HelloWorld):
+   - Keep old addon folders, launch the game — settings auto-migrate on first load
+   - Disable or delete old addons after confirming migration
 
 ---
 
-## User Guide
+## General Commands
 
-### General Commands
+| Command | Description |
+|---|---|
+| `/fuloh help` | Show all commands |
+| `/fuloh list` | List all features and status |
 
-- `/fuloh help` - Show all available commands
-- `/fuloh list` - List all features and their status
-
-### Settings
-
-Access the settings panel via:
-- In-game: `ESC > Interface Options > AddOns > Fuloh's QoL`
-- Command: Open individual feature settings using `/fuloh <shortcut> settings`
-
-In the main settings panel, you can:
-- Enable/disable each feature independently
-- Changes take effect immediately (no reload required)
-
-### Migrating from Standalone Addons
-
-If you previously used `JoinedGroupReminder` or `HelloWorld` as standalone addons:
-
-1. **Install Fuloh_QoL** (don't delete old addons yet)
-2. **Launch the game** - You'll see migration messages in chat
-3. **Verify your settings** - Check that your custom greetings, positions, etc. carried over
-4. **Disable old addons** in the addon list (or delete their folders)
-5. **Old SavedVariables remain** in the WTF folder (harmless, can be left alone)
-
-#### What Gets Migrated
-
-**JoinedGroupReminder:**
-- Banner position
-- Active reminder state (if you reload while in a group)
-
-**HelloWorld:**
-- Custom greeting messages
-
-- Enabled/disabled state
-
-### Uninstalling
-
-To completely remove Fuloh_QoL:
-
-1. Delete the `Fuloh_QoL` folder from `Interface\AddOns`
-2. (Optional) Remove saved settings:
-   - Delete `Fuloh_QoLDB` from your SavedVariables file
-   - Location: `WTF\Account\<YourAccount>\SavedVariables\Fuloh_QoL.lua`
+Settings panel: `ESC > Interface Options > AddOns > Fuloh's QoL`
 
 ---
 
 ## Architecture
 
-### System Overview
-
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     Fuloh_QoL.toc                       │
-│              (Defines load order)                        │
-└──────────────────┬──────────────────────────────────────┘
-                   │
-         ┌─────────▼──────────┐
-         │     Core.lua       │
-         │  - Namespace       │
-         │  - Registry        │
-         │  - Commands        │
-         │  - Settings UI     │
-         │  - Migration       │
-         └─────────┬──────────┘
-                   │
-         ┌─────────▼──────────────────────┐
-         │    Feature Registration        │
-         └─────────┬──────────────────────┘
-                   │
-    ┌──────────┬──────────┴──────────┬──────────┐
-    │          │                     │          │
-┌───▼───────┐ ┌───▼──────────┐ ┌────▼─────┐ ┌──▼──────────────┐
-│ JoinedGrp │ │  HelloWorld  │ │  GGGuys  │ │KeyRerollReminder│
-│ Reminder  │ │ - Utils.lua  │ │-Utils.lua│ │  - UI.lua       │
-│-Const.lua │ │ - Settings   │ │-Settings │ │  - KeyReroll... │
-│- UI.lua   │ │ - HelloWorld │ │-GGGuys   │ │                 │
-│- JGR.lua  │ │              │ │          │ │                 │
-└───────────┘ └──────────────┘ └──────────┘ └─────────────────┘
+Fuloh_QoL.toc
+    └── Core.lua  (namespace, registry, commands, settings UI, migration)
+            ├── JoinedGroupReminder/  (Constants, UI, JGR)
+            ├── HelloWorld/           (Utils, Settings, HelloWorld)
+            ├── GGGuys/               (Utils, Settings, GGGuys)
+            ├── KeyRerollReminder/    (UI, KeyRerollReminder)
+            ├── FilledGroupAlert/     (Constants, Settings, FilledGroupAlert)
+            ├── KeyVote/              (Constants, Utils, UI, Settings, KeyVote)
+            └── MageFoodReminder/     (Constants, UI, MageFoodReminder)
 ```
 
-### Core Components
-
-#### 1. Core.lua
-Central hub that provides:
-- **Namespace**: `Fuloh_QoL` global table
-- **Feature Registry**: Tracks and manages all registered features
-- **Command Router**: Parses `/fuloh` commands and routes to features
-- **Settings Management**: Database initialization and migration
-- **Settings UI**: Main settings panel integration
-- **Error Handling**: pcall() wrapping for all feature operations
-
-#### 2. Feature Modules
-Self-contained modules in `Features/<FeatureName>/` that:
-- Implement the Feature API contract
-- Export functions to `Fuloh_QoL.Features` namespace
-- Register themselves with Core on load
-- Handle their own events and UI
-
-#### 3. Database Structure
+**DB structure:**
 ```lua
 Fuloh_QoLDB = {
-    _migrationComplete = true,  -- Migration flag
-
-    JoinedGroupReminder = {
-        enabled = true,
-        position = { point, relativePoint, x, y },
-        activeReminder = { dungeonName, groupName },
-    },
-
-    HelloWorld = {
-        enabled = true,
-
-        greetings = { "o/", "Hey!", ... },
-    },
+    [FeatureName] = { enabled = bool, -- feature-specific settings },
 }
-```
-
-### Data Flow
-
-#### Feature Enable Flow
-```
-User clicks checkbox
-    ↓
-Core.lua:EnableFeature(name)
-    ↓
-Feature:Enable() [pcall wrapped]
-    ↓
-Feature registers events
-    ↓
-Database updated: enabled = true
-    ↓
-Success message to chat
-```
-
-#### Command Routing Flow
-```
-User types: /fuloh jgr test
-    ↓
-Core.lua SlashCmdList handler
-    ↓
-Parse: shortcut="jgr", args="test"
-    ↓
-Core.lua:RouteCommand(shortcut, args)
-    ↓
-Find feature by shortcut
-    ↓
-Feature:HandleCommand(args) [pcall wrapped]
-    ↓
-Feature executes command logic
 ```
 
 ---
 
 ## Developer Guide
 
-### Adding a New Feature
+### Adding a Feature
 
-#### Step 1: Create Feature Structure
+1. Create `Features/MyFeature/MyFeature.lua` (split into Constants/Utils/UI as needed)
+2. Implement the Feature API:
+   - **Required:** `name`, `shortcut`, `Initialize()`, `Enable()`, `Disable()`, `GetDefaults()`
+   - **Optional:** `label`, `tooltip`, `HandleCommand(args)`, `OnSettingsUI(panel)`
+3. Register: `QoL:RegisterFeature(MyFeature)`
+4. Add files to `Fuloh_QoL.toc` after `Core.lua`, in dependency order
 
-```
-Features/
-└── MyFeature/
-    ├── MyFeature.lua     # Main feature file (required)
-    ├── Utils.lua         # Helper functions (optional)
-    └── UI.lua            # UI components (optional)
-```
-
-#### Step 2: Implement Feature API
-
-**Required Properties:**
-- `Feature.name` (string) - Unique identifier
-- `Feature.shortcut` (string) - Command shortcut (2-5 chars)
-
-**Required Methods:**
-- `Feature:Initialize()` - One-time setup
-- `Feature:Enable()` - Start functionality
-- `Feature:Disable()` - Stop functionality
-- `Feature:GetDefaults()` - Return default settings table
-
-**Optional Methods:**
-- `Feature:HandleCommand(args)` - Handle commands
-
-#### Step 3: Complete Example
-
+**Minimal example:**
 ```lua
--- Features/MyFeature/MyFeature.lua
-
--- Get namespace reference
 local QoL = Fuloh_QoL
-if not QoL then
-    error("Fuloh_QoL namespace not found. Core.lua must load first.")
-    return
-end
-
--- Create feature object
-local MyFeature = {
-    name = "MyFeature",
-    shortcut = "mf",
-}
-
--- Private state
-local eventFrame = CreateFrame("Frame")
-local isActive = false
-
--- Database accessor
-local function GetDB()
-    return Fuloh_QoLDB and Fuloh_QoLDB.MyFeature or {}
-end
-
--- Event handler
-local function OnEvent(self, event, ...)
-    if event == "PLAYER_ENTERING_WORLD" then
-        print("MyFeature: Player entered world!")
-    end
-end
-
---------------------------------------------------------------------------------
--- Feature API Implementation
---------------------------------------------------------------------------------
-
-function MyFeature:Initialize()
-    -- One-time setup (called once on addon load)
-    print("MyFeature initialized")
-
-    -- Get references to other components if needed
-    -- local Utils = QoL.Features.MyFeature_Utils
-end
-
-function MyFeature:Enable()
-    -- Register events and start functionality
-    eventFrame:SetScript("OnEvent", OnEvent)
-    eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    isActive = true
-end
-
-function MyFeature:Disable()
-    -- Unregister events and stop functionality
-    eventFrame:UnregisterAllEvents()
-    eventFrame:SetScript("OnEvent", nil)
-    isActive = false
-end
-
-function MyFeature:GetDefaults()
-    -- Return default settings structure
-    return {
-        enabled = true,
-        customSetting = "default value",
-        numberSetting = 42,
-    }
-end
-
-function MyFeature:HandleCommand(args)
-    -- Handle /fuloh mf <args>
-    local cmd = args:lower():match("^(%S+)") or ""
-
-    if cmd == "test" then
-        print("MyFeature: Test command executed!")
-    elseif cmd == "help" or cmd == "" then
-        print("MyFeature Commands:")
-        print("  /fuloh mf test - Run test")
-        print("  /fuloh mf help - Show help")
-    else
-        print("MyFeature: Unknown command. Type '/fuloh mf help'")
-    end
-end
-
--- Register with Fuloh_QoL
-QoL:RegisterFeature(MyFeature)
-```
-
-#### Step 4: Update TOC File
-
-Add your feature files to `Fuloh_QoL.toc` **after** Core.lua and **in dependency order**:
-
-```
-Core.lua
-Features\MyFeature\Utils.lua
-Features\MyFeature\MyFeature.lua
-```
-
-#### Step 5: Test Your Feature
-
-1. `/reload` in game
-2. Check for load errors
-3. Test: `/fuloh list` - Your feature should appear
-4. Test: `/fuloh mf help` - Commands should work
-5. Test toggle: Settings panel checkbox
-
----
-
-## Technical Reference
-
-### Feature API Reference
-
-#### Feature.name (string)
-Unique identifier for the feature. Used in:
-- Database keys (`Fuloh_QoLDB[name]`)
-- Settings panel
-- Enable/Disable operations
-
-**Example:** `"JoinedGroupReminder"`
-
-#### Feature.shortcut (string)
-Command shortcut for routing. Should be:
-- Short (2-5 characters recommended)
-- Lowercase
-- Unique across all features
-
-**Example:** `"jgr"` (for JoinedGroupReminder)
-
-#### Feature:Initialize()
-Called once when the addon loads (ADDON_LOADED event).
-
-**Purpose:**
-- Set up references to other components
-- Initialize UI elements that persist (like minimap buttons)
-- Register global hooks (not tied to enable/disable)
-- Set up one-time state
-
-**Example:**
-```lua
-function MyFeature:Initialize()
-    -- Get references to exported functions
-    self.Utils = QoL.Features.MyFeature_Utils
-
-    -- Create persistent UI
-    self.frame = CreateFrame("Frame", "MyFeatureFrame", UIParent)
-
-    -- Register global hooks (not disabled)
-    hooksecurefunc("SomeGlobalFunction", function()
-        -- Hook logic
-    end)
-end
-```
-
-#### Feature:Enable()
-Called when feature is enabled (startup or user toggle).
-
-**Purpose:**
-- Register WoW events
-- Start timers or background tasks
-- Show UI elements
-- Begin functionality
-
-**Important:**
-- Must be idempotent (safe to call multiple times)
-- Should check if already enabled to avoid double-registration
-- All events MUST be unregistered in Disable()
-
-**Example:**
-```lua
-function MyFeature:Enable()
-    -- Register events
-    self.eventFrame:SetScript("OnEvent", self.OnEvent)
-    self.eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
-    self.eventFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
-
-    -- Start functionality
-    self:StartWatching()
-
-    -- Show UI
-    if self.frame then
-        self.frame:Show()
-    end
-end
-```
-
-#### Feature:Disable()
-Called when feature is disabled (user toggle).
-
-**Purpose:**
-- Unregister ALL WoW events
-- Cancel timers
-- Hide UI elements
-- Stop functionality
-
-**Important:**
-- Must completely stop all feature activity
-- Feature should be "silent" when disabled
-- Settings should persist (don't clear them)
-
-**Example:**
-```lua
-function MyFeature:Disable()
-    -- Unregister all events
-    self.eventFrame:UnregisterAllEvents()
-    self.eventFrame:SetScript("OnEvent", nil)
-
-    -- Stop functionality
-    self:StopWatching()
-
-    -- Hide UI
-    if self.frame then
-        self.frame:Hide()
-    end
-end
-```
-
-#### Feature:GetDefaults()
-Returns default settings structure for this feature.
-
-**Purpose:**
-- Define default values for all settings
-- Used by Core during database initialization
-- Merged with existing settings (doesn't overwrite)
-
-**Return:** Table with default values
-
-**Example:**
-```lua
-function MyFeature:GetDefaults()
-    return {
-        enabled = true,              -- Should default to true
-        showNotifications = true,
-        threshold = 100,
-        messages = { "Hello", "Hi" },
-        position = nil,              -- nil = use default positioning
-    }
-end
-```
-
-#### Feature:HandleCommand(args) [Optional]
-Handles commands routed via `/fuloh <shortcut> <args>`.
-
-**Parameters:**
-- `args` (string) - Everything after the shortcut
-
-**Purpose:**
-- Provide feature-specific commands
-- Parse arguments and execute logic
-- Display help messages
-
-**Example:**
-```lua
-function MyFeature:HandleCommand(args)
-    local cmd, param = args:match("^(%S+)%s*(.*)$")
-    cmd = cmd and cmd:lower() or ""
-
-    if cmd == "set" then
-        if param ~= "" then
-            local db = GetDB()
-            db.customSetting = param
-            print("MyFeature: Setting updated to: " .. param)
-        else
-            print("MyFeature: Usage: /fuloh mf set <value>")
-        end
-
-    elseif cmd == "toggle" then
-        QoL:ToggleFeature("MyFeature")
-
-    elseif cmd == "help" or cmd == "" then
-        print("MyFeature Commands:")
-        print("  /fuloh mf set <value> - Update setting")
-        print("  /fuloh mf toggle - Toggle feature")
-        print("  /fuloh mf help - Show this help")
-
-    else
-        print("MyFeature: Unknown command '" .. cmd .. "'")
-        print("Type '/fuloh mf help' for available commands")
-    end
-end
-```
-
-### Core API Reference
-
-#### QoL:RegisterFeature(feature)
-Registers a feature with the hub.
-
-**Parameters:**
-- `feature` (table) - Feature object implementing Feature API
-
-**Returns:** boolean (success)
-
-**Validation:**
-- Checks for required properties and methods
-- Validates uniqueness of name and shortcut
-- Returns false and prints error if validation fails
-
-**Usage:**
-```lua
 local MyFeature = { name = "MyFeature", shortcut = "mf" }
--- ... implement API methods ...
-QoL:RegisterFeature(MyFeature)
-```
-
-#### QoL:EnableFeature(name)
-Enables a feature by name.
-
-**Parameters:**
-- `name` (string) - Feature name
-
-**Returns:** boolean (success)
-
-**Side Effects:**
-- Calls `Feature:Enable()` (pcall wrapped)
-- Updates `Fuloh_QoLDB[name].enabled = true`
-- Prints success/error message
-
-**Usage:**
-```lua
-QoL:EnableFeature("MyFeature")
-```
-
-#### QoL:DisableFeature(name)
-Disables a feature by name.
-
-**Parameters:**
-- `name` (string) - Feature name
-
-**Returns:** boolean (success)
-
-**Side Effects:**
-- Calls `Feature:Disable()` (pcall wrapped)
-- Updates `Fuloh_QoLDB[name].enabled = false`
-- Prints success/error message
-
-**Usage:**
-```lua
-QoL:DisableFeature("MyFeature")
-```
-
-#### QoL:ToggleFeature(name)
-Toggles a feature on or off.
-
-**Parameters:**
-- `name` (string) - Feature name
-
-**Returns:** boolean (success)
-
-**Usage:**
-```lua
-QoL:ToggleFeature("MyFeature")
-```
-
-### Namespace Conventions
-
-#### Fuloh_QoL (global)
-Main addon namespace. Contains:
-- `Features` - Table of all registered features and exported functions
-- `RegisteredFeatures` - Registry of feature objects
-- Core methods (RegisterFeature, EnableFeature, etc.)
-
-#### Fuloh_QoL.Features (table)
-Storage for exported functions from features.
-
-**Naming Convention:**
-```lua
-QoL.Features.<FeatureName>_<FunctionName>
-QoL.Features.<FeatureName>_<ComponentName>
-```
-
-**Examples:**
-```lua
--- Exported functions
-QoL.Features.JoinedGroupReminder_ShowReminder
-QoL.Features.HelloWorld_Utils
-QoL.Features.MyFeature_OpenSettings
-
--- Usage in other files
-local ShowReminder = QoL.Features.JoinedGroupReminder_ShowReminder
-ShowReminder(dungeonName, groupName)
-```
-
-#### Fuloh_QoLDB (global SavedVariable)
-Persisted settings. Structure:
-```lua
-Fuloh_QoLDB = {
-    _migrationComplete = boolean,
-
-    [FeatureName] = {
-        enabled = boolean,
-        -- ... feature-specific settings ...
-    },
-}
-```
-
-**Accessing:**
-```lua
-local function GetDB()
-    return Fuloh_QoLDB and Fuloh_QoLDB.MyFeature or {}
-end
-
--- Usage
-local db = GetDB()
-local value = db.customSetting
-```
-
-### Event Handling Patterns
-
-#### Pattern 1: Frame per Feature
-Each feature maintains its own event frame.
-
-```lua
 local eventFrame = CreateFrame("Frame")
 
-function Feature:Enable()
-    eventFrame:SetScript("OnEvent", OnEvent)
-    eventFrame:RegisterEvent("EVENT_NAME")
+function MyFeature:GetDefaults() return { enabled = true } end
+function MyFeature:Initialize() end
+function MyFeature:Enable()
+    eventFrame:SetScript("OnEvent", function(_, event) end)
+    eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 end
-
-function Feature:Disable()
+function MyFeature:Disable()
     eventFrame:UnregisterAllEvents()
     eventFrame:SetScript("OnEvent", nil)
 end
+
+QoL:RegisterFeature(MyFeature)
 ```
 
-#### Pattern 2: Conditional Event Processing
-Process events only when feature is enabled.
+### Key Patterns
+
+- **DB access:** `local db = Fuloh_QoLDB and Fuloh_QoLDB.MyFeature or {}`
+- **Export:** `QoL.Features.MyFeature_FunctionName = fn`
+- **Colors:** `|cff00bfff` (blue), `|cff44ff44` (green), `|cffff4444` (red)
+- **Font:** `Fonts\\FRIZQT__.TTF`
+- **Frame style:** `BackdropTemplate`, dark bg `(0.08, 0.08, 0.12)`, gold bar `(0.9, 0.7, 0.2)`
+
+### Core API
+
+| Method | Description |
+|---|---|
+| `QoL:RegisterFeature(feature)` | Register a feature |
+| `QoL:EnableFeature(name)` | Enable by name |
+| `QoL:DisableFeature(name)` | Disable by name |
+| `QoL:ToggleFeature(name)` | Toggle by name |
+
+### Debugging
 
 ```lua
-local function OnEvent(self, event, ...)
-    -- Double-check enabled state
-    local db = GetDB()
-    if not db.enabled then return end
-
-    -- Process event
-    if event == "PLAYER_ENTERING_WORLD" then
-        -- Handle event
-    end
-end
-```
-
-#### Pattern 3: State Tracking
-Track previous state to detect changes.
-
-```lua
-local previousState = nil
-
-local function OnUpdate()
-    local currentState = GetCurrentState()
-
-    if currentState ~= previousState then
-        -- State changed, do something
-        HandleStateChange(previousState, currentState)
-    end
-
-    previousState = currentState
-end
-```
-
-### Common Patterns
-
-#### Database Access Pattern
-Always use accessor function for safety.
-
-```lua
-local function GetDB()
-    return Fuloh_QoLDB and Fuloh_QoLDB.MyFeature or {}
-end
-
--- Usage - safe even if Fuloh_QoLDB doesn't exist yet
-local db = GetDB()
-local value = db.setting or "default"
-```
-
-#### Feature Reference Pattern
-Get references in Initialize(), use throughout.
-
-```lua
-function Feature:Initialize()
-    self.Utils = QoL.Features.MyFeature_Utils
-    self.UI = QoL.Features.MyFeature_UI
-end
-
-function Feature:Enable()
-    self.Utils.DoSomething()
-    self.UI.Show()
-end
-```
-
-#### Export Pattern
-Export functions to namespace for inter-feature access.
-
-```lua
--- At end of file
-local function MyUtilityFunction()
-    -- Implementation
-end
-
--- Export
-QoL.Features.MyFeature_UtilityFunction = MyUtilityFunction
-
--- Or export entire table
-local Utils = {
-    DoThis = function() end,
-    DoThat = function() end,
-}
-QoL.Features.MyFeature_Utils = Utils
-```
-
-#### Error Message Pattern
-Use consistent color coding for user messages.
-
-```lua
-local COLOR_PREFIX = "|cff00bfff"   -- Light blue
-local COLOR_ERROR = "|cffff4444"    -- Red
-local COLOR_SUCCESS = "|cff44ff44"  -- Green
-local COLOR_RESET = "|r"
-
-print(COLOR_PREFIX .. "[MyFeature]" .. COLOR_RESET .. " Message")
-print(COLOR_PREFIX .. "[MyFeature]" .. COLOR_RESET .. " " ..
-      COLOR_ERROR .. "Error!" .. COLOR_RESET)
-```
-
-### File Organization
-
-#### Single Feature, Single File
-For simple features:
-```lua
--- Features/SimpleFeature/SimpleFeature.lua
--- Contains everything: API implementation, helpers, UI
-```
-
-#### Multi-File Features
-For complex features, split by responsibility:
-
-```
-Features/ComplexFeature/
-├── Constants.lua     # Constants, lookup tables
-├── Utils.lua         # Pure functions, no side effects
-├── UI.lua            # Frame creation, UI logic
-├── Events.lua        # Event handlers (optional)
-└── ComplexFeature.lua # Main file, Feature API, coordination
-```
-
-**Load Order in TOC:**
-```
-Core.lua
-Features\ComplexFeature\Constants.lua
-Features\ComplexFeature\Utils.lua
-Features\ComplexFeature\UI.lua
-Features\ComplexFeature\Events.lua
-Features\ComplexFeature\ComplexFeature.lua
-```
-
-### Debugging Tips
-
-#### Enable Debug Mode
-```lua
-local debugMode = false
-
-local function Debug(...)
-    if debugMode then
-        print("|cffff9900[MyFeature Debug]|r", ...)
-    end
-end
-
--- In HandleCommand
-if cmd == "debug" then
-    debugMode = not debugMode
-    print("MyFeature debug:", debugMode and "ON" or "OFF")
-end
-```
-
-#### Inspect Database
-```lua
--- View entire feature database
+-- List registered features
+/run for k,v in pairs(Fuloh_QoL.RegisteredFeatures) do print(k, v.shortcut) end
+-- Inspect DB
 /run for k,v in pairs(Fuloh_QoLDB.MyFeature) do print(k,v) end
-
--- Check if feature is enabled
-/run print(Fuloh_QoLDB.MyFeature.enabled)
-
--- Force enable in console
+-- Force enable
 /run Fuloh_QoL:EnableFeature("MyFeature")
-```
-
-#### Check Registration
-```lua
--- List all registered features
-/run for name,feat in pairs(Fuloh_QoL.RegisteredFeatures) do print(name, feat.shortcut) end
-
--- Verify feature exists
-/run print(Fuloh_QoL.RegisteredFeatures["MyFeature"] and "Found" or "Not found")
-```
-
-### Migration System
-
-If your feature replaces a standalone addon, implement migration:
-
-```lua
--- In Core.lua, add to MigrateOldSettings()
-if MyOldAddonDB then
-    Print("Migrating settings from MyOldAddon...")
-    Fuloh_QoLDB.MyFeature = Fuloh_QoLDB.MyFeature or {}
-
-    -- Copy settings
-    for k, v in pairs(MyOldAddonDB) do
-        Fuloh_QoLDB.MyFeature[k] = v
-    end
-
-    -- Ensure enabled
-    if Fuloh_QoLDB.MyFeature.enabled == nil then
-        Fuloh_QoLDB.MyFeature.enabled = true
-    end
-
-    migrated = true
-end
 ```
 
 ---
 
 ## Technical Details
 
-- **Interface Version:** 120000, 120001 (TWW)
+- **Interface:** 120000, 120001, 120005 (TWW)
 - **SavedVariables:** `Fuloh_QoLDB`
-- **Architecture:** Feature-based modular system
-- **Settings API:** Modern Dragonflight/TWW Settings API
-- **Error Handling:** All feature operations wrapped in pcall() for safety
-- **Load Order:** Core.lua → Feature files (in dependency order)
-- **Namespace:** Global `Fuloh_QoL`, local feature references
+- **Error handling:** All feature calls wrapped in `pcall()`
 
-## Support & Issues
-
-Report issues or request features at: [Your GitHub/Contact]
+---
 
 ## Version History
 
-### v1.0.0 (2026-02-01)
-- Initial release
-- Consolidated JoinedGroupReminder and HelloWorld
-- Added unified command structure (`/fuloh`)
-- Implemented automatic settings migration
-- Created modular feature system
+### v1.1.0
+- Added FilledGroupAlert, KeyVote, MageFoodReminder
 
-## Credits
+### v1.0.0 (2026-02-01)
+- Initial release: JoinedGroupReminder, HelloWorld, GGGuys, KeyRerollReminder
+- Unified `/fuloh` command structure, modular feature system, auto-migration
+
+---
 
 **Author:** Fuloh (with lots of AI help)
-
-## License
-
