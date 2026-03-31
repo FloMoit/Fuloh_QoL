@@ -105,11 +105,19 @@ local function OnChallengeModeStart()
 
     if ownedKeyLevel > activeKeystoneLevel then return end
 
-    -- If the player's keystone is for the same dungeon we just started, it's their
-    -- own depleted key (starting a key replaces it with a 1-level-lower copy for the
-    -- same dungeon).  No point reminding to reroll your own key.
-    local ownedMapID = C_MythicPlus.GetOwnedKeystoneMapID()
+    -- If the player is running their own key, the depleted key in their bag will be
+    -- for the same dungeon as the active challenge.  Skip the popup in that case.
+    -- We resolve the mapID from both the API and the bag hyperlink (|Hkeystone:MAPID:)
+    -- because the API may return nil if it hasn't updated yet when the event fires.
     local activeMapID = C_ChallengeMode.GetActiveChallengeMapID()
+    local ownedMapID = C_MythicPlus.GetOwnedKeystoneMapID()
+    if not ownedMapID then
+        -- Fallback: parse mapID directly from the bag item hyperlink (language-independent)
+        local hyperlink = ScanOwnedKeystone()
+        if hyperlink then
+            ownedMapID = tonumber(hyperlink:match("|Hkeystone:(%d+):"))
+        end
+    end
     if ownedMapID and activeMapID and ownedMapID == activeMapID then return end
 
     -- Snapshot the key description for the confirmation popup

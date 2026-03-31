@@ -356,6 +356,7 @@ local function ShowVotingPopup(sessionData, keystones)
 
     -- Reset vote button
     votingFrame.voteBtn:Enable()
+    votingFrame.voteBtn:SetWidth(120)
     votingFrame.voteBtnText:SetText(L["Vote"])
     votingFrame.voteBtnText:SetTextColor(0.3, 1.0, 0.3)
     votingFrame.voteBtn:SetBackdropColor(0.15, 0.35, 0.15, 0.9)
@@ -421,6 +422,7 @@ local function LockVotingPopup(voteCount, totalCount)
     end
 
     votingFrame.voteBtn:Disable()
+    votingFrame.voteBtn:SetWidth(200)
     votingFrame.voteBtnText:SetText(L["Waiting"] .. " (" .. voteCount .. "/" .. totalCount .. ")")
     votingFrame.voteBtnText:SetTextColor(0.6, 0.6, 0.6)
     votingFrame.voteBtn:SetBackdropColor(0.12, 0.12, 0.15, 0.9)
@@ -557,7 +559,7 @@ local function GetResultIcon(parent, index)
 
     -- Icon frame (with border) — SecureActionButton so spells can be cast on click
     local iconFrame = CreateFrame("Button", nil, col, "SecureActionButtonTemplate,BackdropTemplate")
-    iconFrame:RegisterForClicks("AnyUp")
+    iconFrame:RegisterForClicks("AnyUp", "AnyDown")
     iconFrame:SetPoint("TOP", col, "TOP", 0, 0)
     iconFrame:SetBackdrop({
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -610,7 +612,10 @@ local function AbbreviateName(name)
     if not name then return "?" end
     local abbr = ""
     for word in name:gmatch("%S+") do
-        abbr = abbr .. word:sub(1, 1):upper()
+        local first = word:sub(1, 1)
+        if first:match("%a") then
+            abbr = abbr .. first:upper()
+        end
     end
     if #abbr < 2 then return name:sub(1, 4) end
     return abbr
