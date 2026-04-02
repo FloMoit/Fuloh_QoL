@@ -22,6 +22,7 @@ local state = { inHome = false, inInst = false, numMembers = 0 }
 local eventFrame = CreateFrame("Frame")
 local pendingLFGJoin = false
 local pendingLFGMerge = false
+local greetedThisGroup = false
 
 
 -- Database accessor
@@ -60,6 +61,11 @@ local function OnGroupRosterUpdate()
     }
     UpdateGroupState()
 
+    -- Reset greeted flag when leaving an instance (dungeon/raid finished or left early)
+    if oldState.inInst and not state.inInst then
+        greetedThisGroup = false
+    end
+
     local db = GetDB()
     local Utils = QoL.Features.HelloWorld_Utils
 
@@ -75,14 +81,19 @@ local function OnGroupRosterUpdate()
         pendingLFGMerge = false
     end
 
+    -- Don't greet twice for the same group session (e.g. home party → entering instance)
+    if greetedThisGroup then return end
+
     if channel then
+        greetedThisGroup = true
+
         -- Multi-second delay (5 to 8 seconds) to make it look natural
         local delay = math.random(50, 80) / 10
 
         C_Timer.After(delay, function()
             -- Final check before sending if still enabled
             if not HelloWorld.isEnabled then return end
-            
+
             -- Use pcall to safely handle chat errors (throttling, silence, etc.)
             local message = GetRandomGreeting()
             if not message or message == "" then return end
