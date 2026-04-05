@@ -50,7 +50,7 @@ local setupPingID = nil
 local setupPlayers = {}   -- { [playerName] = { mapID, level, name } }
 
 -- Forward declarations for functions referenced before definition
-local StartVote, DismissResults
+local StartVote, DismissResults, HandlePing, HandlePong
 
 -- Color codes
 local COLOR_PREFIX  = "|cff00bfff"
@@ -573,7 +573,7 @@ local function OpenSetupWindow()
     SendPing(setupPingID)
 end
 
-local function HandlePing(senderName, msg)
+HandlePing = function(senderName, msg)
     -- Only respond if we did not open the setup window ourselves.
     -- (If setupPingID ~= nil we are the initiator; own-echo is also suppressed here.)
     if setupPingID ~= nil then return end
@@ -582,7 +582,7 @@ local function HandlePing(senderName, msg)
     SendPong(msg.pingID, mapID, level, name)
 end
 
-local function HandlePong(senderName, msg)
+HandlePong = function(senderName, msg)
     if msg.pingID ~= setupPingID then return end
 
     setupPlayers[senderName] = { mapID = msg.mapID, level = msg.level, name = msg.name }
