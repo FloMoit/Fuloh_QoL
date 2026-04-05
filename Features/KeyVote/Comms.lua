@@ -19,8 +19,16 @@ local function Send(payload)
     C_ChatInfo.SendAddonMessage(Constants.ADDON_PREFIX, payload, "PARTY")
 end
 
-local function SendStart(sessionID)
-    Send(Constants.OPCODE_START .. ":" .. sessionID)
+local function SendStart(sessionID, duration)
+    Send(Constants.OPCODE_START .. ":" .. sessionID .. ":" .. (duration or Constants.VOTE_DURATION))
+end
+
+local function SendPing(pingID)
+    Send(Constants.OPCODE_PING .. ":" .. pingID)
+end
+
+local function SendPong(pingID, mapID, level, name)
+    Send(Constants.OPCODE_PONG .. ":" .. pingID .. ":" .. (mapID or 0) .. ":" .. (level or 0) .. ":" .. (name or ""))
 end
 
 local function SendKey(sessionID, mapID, level, name)
@@ -63,7 +71,28 @@ local function ParseMessage(payload)
     local sessionID = parts[2]
 
     if opcode == Constants.OPCODE_START then
-        return { opcode = opcode, sessionID = sessionID }
+        local duration = tonumber(parts[3]) or Constants.VOTE_DURATION
+        return { opcode = opcode, sessionID = sessionID, duration = duration }
+
+    elseif opcode == Constants.OPCODE_PING then
+        -- parts[2] is pingID (reused from sessionID slot)
+        return { opcode = opcode, pingID = sessionID }
+
+    elseif opcode == Constants.OPCODE_PONG then
+        -- KVPONG:pingID:mapID:level:name  (name is last field, may be empty)
+        if #parts < 4 then return nil end
+        local mapID = tonumber(parts[3])
+        local level = tonumber(parts[4])
+        if not mapID or not level then return nil end
+        -- Grab everything after the 4th colon for name (same pattern as KVKEY)
+        local pos = 0
+        for i = 1, 4 do
+            pos = payload:find(":", pos + 1, true)
+            if not pos then break end
+        end
+        local name = pos and payload:sub(pos + 1) or nil
+        if name == "" then name = nil end
+        return { opcode = opcode, pingID = sessionID, mapID = mapID, level = level, name = name }
 
     elseif opcode == Constants.OPCODE_KEY then
         if #parts < 4 then return nil end
@@ -102,8 +131,10 @@ end
 -- Exports
 --------------------------------------------------------------------------------
 
-QoL.Features.KeyVote_SendStart   = SendStart
-QoL.Features.KeyVote_SendKey     = SendKey
-QoL.Features.KeyVote_SendVote    = SendVote
-QoL.Features.KeyVote_SendCancel  = SendCancel
+QoL.Features.KeyVote_SendStart    = SendStart
+QoL.Features.KeyVote_SendKey      = SendKey
+QoL.Features.KeyVote_SendVote     = SendVote
+QoL.Features.KeyVote_SendCancel   = SendCancel
+QoL.Features.KeyVote_SendPing     = SendPing
+QoL.Features.KeyVote_SendPong     = SendPong
 QoL.Features.KeyVote_ParseMessage = ParseMessage

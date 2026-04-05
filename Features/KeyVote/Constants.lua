@@ -19,6 +19,8 @@ local Constants = {
     OPCODE_KEY    = "KVKEY",
     OPCODE_VOTE   = "KVVOTE",
     OPCODE_CANCEL = "KVCANCEL",
+    OPCODE_PING   = "KVPING",
+    OPCODE_PONG   = "KVPONG",
 
     -- Timers (seconds)
     VOTE_DURATION    = 30,
@@ -39,6 +41,23 @@ local Constants = {
         OWNER_COLOR    = { 0.5, 0.5, 0.5 },
         NOKEY_COLOR    = { 0.4, 0.4, 0.4 },
         TIMER_COLOR    = { 0.9, 0.7, 0.2, 0.9 },
+
+        FADE_DURATION = 0.2,
+    },
+
+    -- UI: Setup Window
+    SETUP_UI = {
+        WIDTH      = 360,
+        HEIGHT     = 300,
+        ROW_HEIGHT = 26,
+        ICON_SIZE  = 20,
+
+        BACKGROUND_COLOR = { 0.08, 0.08, 0.12, 0.95 },
+        BORDER_COLOR     = { 0.9, 0.7, 0.2, 0.8 },
+
+        TITLE_COLOR    = { 1.0, 0.82, 0.0 },
+        SECTION_COLOR  = { 0.6, 0.6, 0.6 },
+        NOKEY_COLOR    = { 0.4, 0.4, 0.4 },
 
         FADE_DURATION = 0.2,
     },
@@ -78,6 +97,13 @@ local Constants = {
         ["No active vote"]   = (locale == "frFR") and "Aucun vote en cours." or "No active vote.",
         ["wins"]             = (locale == "frFR") and "gagne !" or "wins!",
         ["Tie"]              = (locale == "frFR") and "Égalité" or "Tie",
+        ["Key Vote Setup"]   = (locale == "frFR") and "Configuration du Vote" or "Key Vote Setup",
+        ["Start Vote"]       = (locale == "frFR") and "Lancer le vote" or "Start Vote",
+        ["Party Keys"]       = (locale == "frFR") and "Clés du groupe" or "Party Keys",
+        ["Eligible Players"] = (locale == "frFR") and "Joueurs éligibles" or "Eligible Players",
+        ["Vote Duration"]    = (locale == "frFR") and "Durée du vote" or "Vote Duration",
+        ["seconds"]          = (locale == "frFR") and "s" or "s",
+        ["No players found"] = (locale == "frFR") and "Aucun joueur trouvé" or "No players found",
     },
 }
 

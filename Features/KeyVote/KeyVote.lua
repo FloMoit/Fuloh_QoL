@@ -21,9 +21,10 @@ local KeyVote = {
 
 -- Constants and Comms references (populated in Initialize)
 local C, L
-local SendStart, SendKey, SendVote, SendCancel, ParseMessage
+local SendStart, SendKey, SendVote, SendCancel, SendPing, SendPong, ParseMessage
 local ShowVotingPopup, UpdateVotingPopup, LockVotingPopup, UpdateWaitingCount
 local HideVotingPopup, ShowResults, HideResults
+local ShowSetupPopup, UpdateSetupKeys, UpdateSetupPlayers, HideSetupPopup
 
 -- Private state
 local eventFrame = CreateFrame("Frame")
@@ -43,6 +44,10 @@ local session = {
     timerHandle = nil,
     resultsTimerHandle = nil,
 }
+
+-- Private setup state
+local setupPingID = nil
+local setupPlayers = {}   -- { [playerName] = { mapID, level, name } }
 
 -- Forward declarations for functions referenced before definition
 local StartVote, DismissResults
@@ -290,6 +295,7 @@ local function HandleStart(senderName, msg)
     session.state = STATE_VOTING
     session.initiator = senderName
     session.startTime = GetTime()
+    session.duration = msg.duration or C.VOTE_DURATION
     session.participants = {}
     session.votes = {}
     session.myVoteSubmitted = false
@@ -306,7 +312,7 @@ local function HandleStart(senderName, msg)
     ShowVotingPopup(session, keystones)
 
     -- Start vote timer
-    session.timerHandle = C_Timer.NewTimer(C.VOTE_DURATION, function()
+    session.timerHandle = C_Timer.NewTimer(session.duration, function()
         if session.state == STATE_VOTING then
             TransitionToResults()
         end
@@ -386,6 +392,10 @@ local function OnChatMsgAddon(prefix, payload, _, senderName)
         HandleVote(shortName, msg)
     elseif msg.opcode == C.OPCODE_CANCEL then
         HandleCancel(shortName, msg)
+    elseif msg.opcode == C.OPCODE_PING then
+        HandlePing(shortName, msg)
+    elseif msg.opcode == C.OPCODE_PONG then
+        HandlePong(shortName, msg)
     end
 end
 
@@ -458,7 +468,7 @@ end
 -- Vote Actions
 --------------------------------------------------------------------------------
 
-StartVote = function()
+StartVote = function(duration)
     if session.state ~= STATE_IDLE then
         Print(L["Already active"])
         return
@@ -471,16 +481,14 @@ StartVote = function()
 
     local playerName = GetPlayerName()
     local sessionID = playerName .. "-" .. math.floor(GetTime())
+    local voteDuration = duration or C.VOTE_DURATION
 
-    -- Broadcast KVSTART
-    SendStart(sessionID)
+    -- Broadcast KVSTART (with duration)
+    SendStart(sessionID, voteDuration)
 
-    -- Handle our own start (since CHAT_MSG_ADDON delivers our own messages too,
-    -- this will be handled by HandleStart — but we call it directly to ensure
-    -- immediate UI response regardless of addon message delivery timing)
-    -- The HandleStart checks state == IDLE, so the duplicate from CHAT_MSG_ADDON
-    -- will be safely ignored since we've already transitioned to VOTING.
-    HandleStart(playerName, { opcode = C.OPCODE_START, sessionID = sessionID })
+    -- Handle our own start directly for immediate UI response.
+    -- The duplicate from CHAT_MSG_ADDON is safely ignored (state already VOTING).
+    HandleStart(playerName, { opcode = C.OPCODE_START, sessionID = sessionID, duration = voteDuration })
 end
 
 local function CancelVote()
@@ -499,6 +507,105 @@ local function CancelVote()
     HideResults()
     ResetSession()
     Print(L["Vote cancelled"])
+end
+
+--------------------------------------------------------------------------------
+-- Setup Window
+--------------------------------------------------------------------------------
+
+-- Build a sorted keystone list from setupPlayers (same shape as BuildKeystoneList)
+local function BuildSetupKeystoneList()
+    local keyMap = {}
+    local order = {}
+
+    for playerName, data in pairs(setupPlayers) do
+        local keyID = data.mapID .. "-" .. data.level
+        if not keyMap[keyID] then
+            keyMap[keyID] = {
+                keyID  = keyID,
+                mapID  = data.mapID,
+                level  = data.level,
+                name   = data.name,
+                owners = {},
+            }
+            order[#order + 1] = keyID
+        end
+        local owners = keyMap[keyID].owners
+        owners[#owners + 1] = playerName
+    end
+
+    local result = {}
+    for _, keyID in ipairs(order) do
+        result[#result + 1] = keyMap[keyID]
+    end
+    table.sort(result, function(a, b)
+        if a.mapID == 0 and b.mapID ~= 0 then return false end
+        if a.mapID ~= 0 and b.mapID == 0 then return true end
+        if a.level ~= b.level then return a.level > b.level end
+        return (a.name or "") < (b.name or "")
+    end)
+
+    return result
+end
+
+local function OpenSetupWindow()
+    if session.state ~= STATE_IDLE then
+        Print(L["Already active"])
+        return
+    end
+
+    if not IsInGroup() then
+        Print(L["Not in group"])
+        return
+    end
+
+    -- Clear any stale setup state
+    setupPingID = nil
+    setupPlayers = {}
+
+    local playerName = GetPlayerName()
+    local mapID, level, name = GetOwnKeystone()
+
+    setupPlayers[playerName] = { mapID = mapID, level = level, name = name }
+    setupPingID = playerName .. "-setup-" .. math.floor(GetTime())
+
+    ShowSetupPopup(playerName, mapID, level, name)
+    SendPing(setupPingID)
+end
+
+local function HandlePing(senderName, msg)
+    -- Only respond if we did not open the setup window ourselves.
+    -- (If setupPingID ~= nil we are the initiator; own-echo is also suppressed here.)
+    if setupPingID ~= nil then return end
+
+    local mapID, level, name = GetOwnKeystone()
+    SendPong(msg.pingID, mapID, level, name)
+end
+
+local function HandlePong(senderName, msg)
+    if msg.pingID ~= setupPingID then return end
+
+    setupPlayers[senderName] = { mapID = msg.mapID, level = msg.level, name = msg.name }
+    UpdateSetupKeys(BuildSetupKeystoneList())
+    UpdateSetupPlayers(setupPlayers)
+end
+
+local function OnSetupStart(duration)
+    HideSetupPopup()
+    setupPingID = nil
+    setupPlayers = {}
+    StartVote(duration)
+end
+
+local function OnSetupClose()
+    HideSetupPopup()
+    setupPingID = nil
+    setupPlayers = {}
+end
+
+local function TestSetupUI()
+    ShowSetupPopup(GetPlayerName(), 2660, 10, "Ara-Kara, City of Echoes")
+    Print("Test setup UI shown.")
 end
 
 local function OnLocalVoteSubmit(selectedKeys)
@@ -573,25 +680,33 @@ function KeyVote:Initialize()
     ResolveDungeonInfo = QoL.Features.KeyVote_ResolveDungeonInfo
 
     -- Get references to comms functions
-    SendStart   = QoL.Features.KeyVote_SendStart
-    SendKey     = QoL.Features.KeyVote_SendKey
-    SendVote    = QoL.Features.KeyVote_SendVote
-    SendCancel  = QoL.Features.KeyVote_SendCancel
+    SendStart    = QoL.Features.KeyVote_SendStart
+    SendKey      = QoL.Features.KeyVote_SendKey
+    SendVote     = QoL.Features.KeyVote_SendVote
+    SendCancel   = QoL.Features.KeyVote_SendCancel
+    SendPing     = QoL.Features.KeyVote_SendPing
+    SendPong     = QoL.Features.KeyVote_SendPong
     ParseMessage = QoL.Features.KeyVote_ParseMessage
 
     -- Get references to UI functions
-    ShowVotingPopup  = QoL.Features.KeyVote_ShowVotingPopup
-    UpdateVotingPopup = QoL.Features.KeyVote_UpdateVotingPopup
-    LockVotingPopup  = QoL.Features.KeyVote_LockVotingPopup
+    ShowVotingPopup    = QoL.Features.KeyVote_ShowVotingPopup
+    UpdateVotingPopup  = QoL.Features.KeyVote_UpdateVotingPopup
+    LockVotingPopup    = QoL.Features.KeyVote_LockVotingPopup
     UpdateWaitingCount = QoL.Features.KeyVote_UpdateWaitingCount
-    HideVotingPopup  = QoL.Features.KeyVote_HideVotingPopup
-    ShowResults      = QoL.Features.KeyVote_ShowResults
-    HideResults      = QoL.Features.KeyVote_HideResults
+    HideVotingPopup    = QoL.Features.KeyVote_HideVotingPopup
+    ShowResults        = QoL.Features.KeyVote_ShowResults
+    HideResults        = QoL.Features.KeyVote_HideResults
+    ShowSetupPopup     = QoL.Features.KeyVote_ShowSetupPopup
+    UpdateSetupKeys    = QoL.Features.KeyVote_UpdateSetupKeys
+    UpdateSetupPlayers = QoL.Features.KeyVote_UpdateSetupPlayers
+    HideSetupPopup     = QoL.Features.KeyVote_HideSetupPopup
 
     -- Register UI callbacks
     QoL.Features.KeyVote_SetVoteSubmitCallback(OnLocalVoteSubmit)
     QoL.Features.KeyVote_SetVoteCloseCallback(OnLocalVoteClose)
     QoL.Features.KeyVote_SetResultsDismissCallback(DismissResults)
+    QoL.Features.KeyVote_SetSetupStartCallback(OnSetupStart)
+    QoL.Features.KeyVote_SetSetupCloseCallback(OnSetupClose)
 
     -- Register addon message prefix (must be eager — messages before registration are dropped)
     C_ChatInfo.RegisterAddonMessagePrefix(C.ADDON_PREFIX)
@@ -629,6 +744,7 @@ function KeyVote:GetDefaults()
         enableChatTrigger = true,
         votingPosition = nil,
         resultsPosition = nil,
+        setupPosition = nil,
     }
 end
 
@@ -636,22 +752,24 @@ function KeyVote:HandleCommand(args)
     local cmd = args:lower():match("^(%S+)") or args:lower()
 
     if cmd == "" or cmd == "start" then
-        StartVote()
+        OpenSetupWindow()
     elseif cmd == "cancel" then
         CancelVote()
     elseif cmd == "test" then
         TestVotingUI()
     elseif cmd == "testresult" then
         TestResultsUI()
+    elseif cmd == "testsetup" then
+        TestSetupUI()
     elseif cmd == "help" then
         Print("Commands:")
-        print("  /fuloh vote          - Start a key vote")
-        print("  /fuloh vote cancel   - Cancel the current vote")
-        print("  /fuloh vote test     - Preview the voting UI")
+        print("  /fuloh vote            - Open vote setup window")
+        print("  /fuloh vote cancel     - Cancel the current vote")
+        print("  /fuloh vote test       - Preview the voting UI")
         print("  /fuloh vote testresult - Preview the results UI")
+        print("  /fuloh vote testsetup  - Preview the setup window")
     else
-        -- Default: try to start a vote
-        StartVote()
+        OpenSetupWindow()
     end
 end
 
