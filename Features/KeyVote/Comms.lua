@@ -46,9 +46,15 @@ local function SendCancel(sessionID)
     Send(Constants.OPCODE_CANCEL .. ":" .. sessionID)
 end
 
-local function SendWheelOpen(sessionID, mapIDs)
-    -- mapIDs = {number, ...}
-    Send(Constants.OPCODE_WHEELOPEN .. ":" .. sessionID .. ":" .. table.concat(mapIDs, ","))
+local function SendWheelOpen(sessionID, dungeons)
+    -- dungeons = {{mapID, name, level}, ...}
+    -- Each entry encoded as "mapID~name~level", entries separated by ";"
+    -- (~) and (;) are safe: dungeon names contain commas but not these characters.
+    local parts = {}
+    for _, d in ipairs(dungeons) do
+        parts[#parts + 1] = d.mapID .. "~" .. (d.name or "") .. "~" .. (d.level or 0)
+    end
+    Send(Constants.OPCODE_WHEELOPEN .. ":" .. sessionID .. ":" .. table.concat(parts, ";"))
 end
 
 local function SendSpin(sessionID, targetSpin, spinDuration)
@@ -134,13 +140,20 @@ local function ParseMessage(payload)
         return { opcode = opcode, sessionID = sessionID }
 
     elseif opcode == Constants.OPCODE_WHEELOPEN then
-        -- parts[2]=sessionID, parts[3]=comma-separated mapIDs
-        local mapIDsRaw = parts[3] or ""
-        local mapIDs = {}
-        for id in mapIDsRaw:gmatch("[^,]+") do
-            mapIDs[#mapIDs + 1] = tonumber(id)
+        -- parts[3] = "mapID~name~level;mapID~name~level;..."
+        local entriesRaw = parts[3] or ""
+        local dungeons = {}
+        for entry in entriesRaw:gmatch("[^;]+") do
+            local mapID, name, level = entry:match("^(%d+)~(.-)~(%d+)$")
+            if mapID then
+                dungeons[#dungeons + 1] = {
+                    mapID = tonumber(mapID),
+                    name  = name,
+                    level = tonumber(level) or 0,
+                }
+            end
         end
-        return { opcode = opcode, sessionID = sessionID, mapIDs = mapIDs }
+        return { opcode = opcode, sessionID = sessionID, dungeons = dungeons }
 
     elseif opcode == Constants.OPCODE_SPIN then
         local encoded  = tonumber(parts[3])

@@ -396,13 +396,26 @@ local function BuildWheelDungeonList()
 
     local getSpell = QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpellByMapID
 
+    -- Track max level per mapID (multiple players may hold the same dungeon)
+    local maxLevel = {}
+
     for _, data in pairs(setupPlayers) do
         local mapID = data.mapID
-        if mapID and mapID ~= 0 and not seen[mapID] then
-            seen[mapID] = true
-            local name    = data.name or ResolveDungeonInfo(mapID)
-            local spellID = getSpell and getSpell(mapID)
-            result[#result + 1] = { name = name, spellID = spellID, mapID = mapID }
+        if mapID and mapID ~= 0 then
+            local lvl = data.level or 0
+            if not seen[mapID] then
+                seen[mapID]     = true
+                maxLevel[mapID] = lvl
+                local name    = data.name or ResolveDungeonInfo(mapID)
+                local spellID = getSpell and getSpell(mapID)
+                result[#result + 1] = { name = name, spellID = spellID, mapID = mapID, level = lvl }
+            elseif lvl > maxLevel[mapID] then
+                -- Update level to the higher of the two
+                maxLevel[mapID] = lvl
+                for _, d in ipairs(result) do
+                    if d.mapID == mapID then d.level = lvl; break end
+                end
+            end
         end
     end
 
@@ -413,7 +426,7 @@ local function BuildWheelDungeonList()
         if data then
             local name    = data.name or ResolveDungeonInfo(data.mapID or 0)
             local spellID = getSpell and data.mapID and getSpell(data.mapID)
-            result[1] = { name = name or "?", spellID = spellID, mapID = data.mapID or 0 }
+            result[1] = { name = name or "?", spellID = spellID, mapID = data.mapID or 0, level = data.level or 0 }
         end
     end
 
@@ -430,10 +443,11 @@ local function OnWheelDone(winnerIndex)
 
     session.state = STATE_RESULTS
 
+    local level = d.level or 0
     local fakeResults = {{
-        keyID     = tostring(d.mapID) .. "-0",
+        keyID     = tostring(d.mapID) .. "-" .. level,
         mapID     = d.mapID,
-        level     = 0,
+        level     = level,
         name      = d.name,
         voteCount = 1,
         isWinner  = true,
@@ -452,15 +466,12 @@ local function OnSetupSpin()
     local dungeons = BuildWheelDungeonList()
     setupPlayers   = {}   -- no longer needed; clear now
 
-    local mapIDs = {}
-    for _, d in ipairs(dungeons) do mapIDs[#mapIDs + 1] = d.mapID end
-
     session.id            = sessionID
     session.initiator     = playerName
     session.state         = STATE_WHEEL
     session.wheelDungeons = dungeons
 
-    SendWheelOpen(sessionID, mapIDs)
+    SendWheelOpen(sessionID, dungeons)
 
     ShowWheelPopup(dungeons, true,
         function(tSpin, dur)             -- onSpinRequested
@@ -484,10 +495,11 @@ local function HandleWheelOpen(senderName, msg)
 
     local getSpell = QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpellByMapID
     local dungeons = {}
-    for _, mapID in ipairs(msg.mapIDs) do
-        local name    = ResolveDungeonInfo(mapID)
-        local spellID = getSpell and getSpell(mapID)
-        dungeons[#dungeons + 1] = { name = name, mapID = mapID, spellID = spellID }
+    for _, entry in ipairs(msg.dungeons) do
+        local spellID = getSpell and getSpell(entry.mapID)
+        -- entry.name comes from the initiator (already resolved); fall back to local only as last resort
+        local name = entry.name ~= "" and entry.name or ResolveDungeonInfo(entry.mapID)
+        dungeons[#dungeons + 1] = { name = name, mapID = entry.mapID, spellID = spellID, level = entry.level }
     end
     session.wheelDungeons = dungeons
 
