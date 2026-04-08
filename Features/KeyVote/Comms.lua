@@ -46,6 +46,16 @@ local function SendCancel(sessionID)
     Send(Constants.OPCODE_CANCEL .. ":" .. sessionID)
 end
 
+local function SendWheelOpen(sessionID, mapIDs)
+    -- mapIDs = {number, ...}
+    Send(Constants.OPCODE_WHEELOPEN .. ":" .. sessionID .. ":" .. table.concat(mapIDs, ","))
+end
+
+local function SendSpin(sessionID, targetSpin, spinDuration)
+    local encoded = math.floor(targetSpin * 10000)
+    Send(Constants.OPCODE_SPIN .. ":" .. sessionID .. ":" .. encoded .. ":" .. spinDuration)
+end
+
 --------------------------------------------------------------------------------
 -- Parsing
 --------------------------------------------------------------------------------
@@ -122,6 +132,22 @@ local function ParseMessage(payload)
 
     elseif opcode == Constants.OPCODE_CANCEL then
         return { opcode = opcode, sessionID = sessionID }
+
+    elseif opcode == Constants.OPCODE_WHEELOPEN then
+        -- parts[2]=sessionID, parts[3]=comma-separated mapIDs
+        local mapIDsRaw = parts[3] or ""
+        local mapIDs = {}
+        for id in mapIDsRaw:gmatch("[^,]+") do
+            mapIDs[#mapIDs + 1] = tonumber(id)
+        end
+        return { opcode = opcode, sessionID = sessionID, mapIDs = mapIDs }
+
+    elseif opcode == Constants.OPCODE_SPIN then
+        local encoded  = tonumber(parts[3])
+        local duration = tonumber(parts[4])
+        if not encoded or not duration then return nil end
+        return { opcode = opcode, sessionID = sessionID,
+                 targetSpin = encoded / 10000.0, spinDuration = duration }
     end
 
     return nil
@@ -131,10 +157,12 @@ end
 -- Exports
 --------------------------------------------------------------------------------
 
-QoL.Features.KeyVote_SendStart    = SendStart
-QoL.Features.KeyVote_SendKey      = SendKey
-QoL.Features.KeyVote_SendVote     = SendVote
-QoL.Features.KeyVote_SendCancel   = SendCancel
-QoL.Features.KeyVote_SendPing     = SendPing
-QoL.Features.KeyVote_SendPong     = SendPong
-QoL.Features.KeyVote_ParseMessage = ParseMessage
+QoL.Features.KeyVote_SendStart     = SendStart
+QoL.Features.KeyVote_SendKey       = SendKey
+QoL.Features.KeyVote_SendVote      = SendVote
+QoL.Features.KeyVote_SendCancel    = SendCancel
+QoL.Features.KeyVote_SendPing      = SendPing
+QoL.Features.KeyVote_SendPong      = SendPong
+QoL.Features.KeyVote_SendWheelOpen = SendWheelOpen
+QoL.Features.KeyVote_SendSpin      = SendSpin
+QoL.Features.KeyVote_ParseMessage  = ParseMessage

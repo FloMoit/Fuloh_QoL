@@ -22,9 +22,12 @@ local KeyVote = {
 -- Constants and Comms references (populated in Initialize)
 local C, L
 local SendStart, SendKey, SendVote, SendCancel, SendPing, SendPong, ParseMessage
+local SendWheelOpen, SendSpin
 local ShowVotingPopup, UpdateVotingPopup, LockVotingPopup, UpdateWaitingCount
 local HideVotingPopup, ShowResults, HideResults
 local ShowSetupPopup, UpdateSetupKeys, UpdateSetupPlayers, HideSetupPopup
+local ShowWheelPopup, StartWheelSpin, HideWheelPopup
+local TestWheelUI
 
 -- Private state
 local eventFrame = CreateFrame("Frame")
@@ -32,6 +35,7 @@ local eventFrame = CreateFrame("Frame")
 local STATE_IDLE    = "IDLE"
 local STATE_VOTING  = "VOTING"
 local STATE_RESULTS = "RESULTS"
+local STATE_WHEEL   = "WHEEL"
 
 local session = {
     id = "",
@@ -43,6 +47,8 @@ local session = {
     myVoteSubmitted = false,
     timerHandle = nil,
     resultsTimerHandle = nil,
+    wheelDungeons    = nil,   -- {{name, spellID, mapID}, ...}
+    wheelTimerHandle = nil,   -- 90-second safety timer (non-initiators)
 }
 
 -- Private setup state
@@ -133,6 +139,8 @@ local function ResetSession()
     session.participants = {}
     session.votes = {}
     session.myVoteSubmitted = false
+    session.wheelDungeons    = nil
+    session.wheelTimerHandle = nil
 end
 
 -- Get the local player's name (without realm if same server)
@@ -364,10 +372,140 @@ local function HandleCancel(senderName, msg)
     if session.state == STATE_IDLE then return end
     if msg.sessionID ~= session.id then return end
 
+    if session.state == STATE_WHEEL then
+        if session.wheelTimerHandle then
+            session.wheelTimerHandle:Cancel()
+            session.wheelTimerHandle = nil
+        end
+        HideWheelPopup()
+    end
+
     HideVotingPopup()
     HideResults()
     ResetSession()
     Print(L["Vote cancelled"])
+end
+
+--------------------------------------------------------------------------------
+-- Wheel: dungeon list builder
+--------------------------------------------------------------------------------
+
+local function BuildWheelDungeonList()
+    local seen   = {}
+    local result = {}
+
+    local getSpell = QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpellByMapID
+
+    for _, data in pairs(setupPlayers) do
+        local mapID = data.mapID
+        if mapID and mapID ~= 0 and not seen[mapID] then
+            seen[mapID] = true
+            local name    = data.name or ResolveDungeonInfo(mapID)
+            local spellID = getSpell and getSpell(mapID)
+            result[#result + 1] = { name = name, spellID = spellID, mapID = mapID }
+        end
+    end
+
+    -- Fallback: if every player has no key, include the initiator's entry anyway
+    if #result == 0 then
+        local playerName = GetPlayerName()
+        local data = setupPlayers[playerName]
+        if data then
+            local name    = data.name or ResolveDungeonInfo(data.mapID or 0)
+            local spellID = getSpell and data.mapID and getSpell(data.mapID)
+            result[1] = { name = name or "?", spellID = spellID, mapID = data.mapID or 0 }
+        end
+    end
+
+    return result
+end
+
+--------------------------------------------------------------------------------
+-- Wheel: callbacks
+--------------------------------------------------------------------------------
+
+local function OnWheelDone(winnerIndex)
+    local d = session.wheelDungeons and session.wheelDungeons[winnerIndex]
+    if not d then return end
+
+    session.state = STATE_RESULTS
+
+    local fakeResults = {{
+        keyID     = tostring(d.mapID) .. "-0",
+        mapID     = d.mapID,
+        level     = 0,
+        name      = d.name,
+        voteCount = 1,
+        isWinner  = true,
+    }}
+    HideWheelPopup()
+    ShowResults(fakeResults)
+    Print(COLOR_GOLD .. (d.name or "?") .. COLOR_RESET .. " wins the spin!")
+end
+
+local function OnSetupSpin()
+    HideSetupPopup()
+    setupPingID  = nil
+    local playerName = GetPlayerName()
+    local sessionID  = playerName .. "-wheel-" .. math.floor(GetTime())
+
+    local dungeons = BuildWheelDungeonList()
+    setupPlayers   = {}   -- no longer needed; clear now
+
+    local mapIDs = {}
+    for _, d in ipairs(dungeons) do mapIDs[#mapIDs + 1] = d.mapID end
+
+    session.id            = sessionID
+    session.initiator     = playerName
+    session.state         = STATE_WHEEL
+    session.wheelDungeons = dungeons
+
+    SendWheelOpen(sessionID, mapIDs)
+
+    ShowWheelPopup(dungeons, true,
+        function(tSpin, dur)             -- onSpinRequested
+            SendSpin(sessionID, tSpin, dur)
+            StartWheelSpin(tSpin, dur)   -- start locally immediately
+        end,
+        OnWheelDone
+    )
+end
+
+--------------------------------------------------------------------------------
+-- Wheel: protocol handlers
+--------------------------------------------------------------------------------
+
+local function HandleWheelOpen(senderName, msg)
+    if session.state ~= STATE_IDLE then return end
+
+    session.id        = msg.sessionID
+    session.initiator = senderName
+    session.state     = STATE_WHEEL
+
+    local getSpell = QoL.Features.JoinedGroupReminder_GetDungeonTeleportSpellByMapID
+    local dungeons = {}
+    for _, mapID in ipairs(msg.mapIDs) do
+        local name    = ResolveDungeonInfo(mapID)
+        local spellID = getSpell and getSpell(mapID)
+        dungeons[#dungeons + 1] = { name = name, mapID = mapID, spellID = spellID }
+    end
+    session.wheelDungeons = dungeons
+
+    -- Safety timer: hide wheel if initiator never clicks Spin
+    session.wheelTimerHandle = C_Timer.NewTimer(90, function()
+        if session.state == STATE_WHEEL then
+            HideWheelPopup()
+            ResetSession()
+        end
+    end)
+
+    ShowWheelPopup(dungeons, false, nil, OnWheelDone)
+end
+
+local function HandleSpin(senderName, msg)
+    if session.state ~= STATE_WHEEL then return end
+    if msg.sessionID ~= session.id then return end
+    StartWheelSpin(msg.targetSpin, msg.spinDuration)
 end
 
 --------------------------------------------------------------------------------
@@ -396,6 +534,10 @@ local function OnChatMsgAddon(prefix, payload, _, senderName)
         HandlePing(shortName, msg)
     elseif msg.opcode == C.OPCODE_PONG then
         HandlePong(shortName, msg)
+    elseif msg.opcode == C.OPCODE_WHEELOPEN then
+        HandleWheelOpen(shortName, msg)
+    elseif msg.opcode == C.OPCODE_SPIN then
+        HandleSpin(shortName, msg)
     end
 end
 
@@ -404,6 +546,13 @@ local function OnGroupRosterUpdate()
 
     -- If we left the group entirely, cancel
     if not IsInGroup() then
+        if session.state == STATE_WHEEL then
+            if session.wheelTimerHandle then
+                session.wheelTimerHandle:Cancel()
+                session.wheelTimerHandle = nil
+            end
+            HideWheelPopup()
+        end
         HideVotingPopup()
         HideResults()
         ResetSession()
@@ -686,6 +835,8 @@ function KeyVote:Initialize()
     SendCancel   = QoL.Features.KeyVote_SendCancel
     SendPing     = QoL.Features.KeyVote_SendPing
     SendPong     = QoL.Features.KeyVote_SendPong
+    SendWheelOpen = QoL.Features.KeyVote_SendWheelOpen
+    SendSpin      = QoL.Features.KeyVote_SendSpin
     ParseMessage = QoL.Features.KeyVote_ParseMessage
 
     -- Get references to UI functions
@@ -700,6 +851,9 @@ function KeyVote:Initialize()
     UpdateSetupKeys    = QoL.Features.KeyVote_UpdateSetupKeys
     UpdateSetupPlayers = QoL.Features.KeyVote_UpdateSetupPlayers
     HideSetupPopup     = QoL.Features.KeyVote_HideSetupPopup
+    ShowWheelPopup     = QoL.Features.KeyVote_ShowWheelPopup
+    StartWheelSpin     = QoL.Features.KeyVote_StartWheelSpin
+    HideWheelPopup     = QoL.Features.KeyVote_HideWheelPopup
 
     -- Register UI callbacks
     QoL.Features.KeyVote_SetVoteSubmitCallback(OnLocalVoteSubmit)
@@ -707,6 +861,9 @@ function KeyVote:Initialize()
     QoL.Features.KeyVote_SetResultsDismissCallback(DismissResults)
     QoL.Features.KeyVote_SetSetupStartCallback(OnSetupStart)
     QoL.Features.KeyVote_SetSetupCloseCallback(OnSetupClose)
+    QoL.Features.KeyVote_SetSetupSpinCallback(OnSetupSpin)
+
+    TestWheelUI = QoL.Features.KeyVote_TestWheelUI
 
     -- Register addon message prefix (must be eager — messages before registration are dropped)
     C_ChatInfo.RegisterAddonMessagePrefix(C.ADDON_PREFIX)
@@ -734,6 +891,7 @@ function KeyVote:Disable()
     eventFrame:SetScript("OnEvent", nil)
 
     -- Clean up any active session
+    HideWheelPopup()
     HideVotingPopup()
     HideResults()
     ResetSession()
@@ -761,6 +919,8 @@ function KeyVote:HandleCommand(args)
         TestResultsUI()
     elseif cmd == "testsetup" then
         TestSetupUI()
+    elseif cmd == "wheeltest" then
+        TestWheelUI()
     elseif cmd == "help" then
         Print("Commands:")
         print("  /fuloh vote            - Open vote setup window")
@@ -768,6 +928,7 @@ function KeyVote:HandleCommand(args)
         print("  /fuloh vote test       - Preview the voting UI")
         print("  /fuloh vote testresult - Preview the results UI")
         print("  /fuloh vote testsetup  - Preview the setup window")
+        print("  /fuloh vote wheeltest  - Preview the spinning wheel UI")
     else
         OpenSetupWindow()
     end

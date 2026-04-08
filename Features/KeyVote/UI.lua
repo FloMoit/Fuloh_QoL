@@ -25,6 +25,7 @@ local onVoteClose = nil      -- function() called when user closes the voting po
 local onResultsDismiss = nil -- function() called when user dismisses results
 local onSetupStart = nil     -- function(duration) called when "Start Vote" clicked
 local onSetupClose = nil     -- function() called when X / ESC closes setup window
+local onSetupSpin  = nil     -- function() called when "Spin!" clicked
 
 -- Database accessor
 local function GetDB()
@@ -209,10 +210,10 @@ local function CreateSetupFrame()
     plusTxt:SetTextColor(0.8, 0.8, 0.8)
     frame.plusBtn = plusBtn
 
-    -- "Start Vote" button
+    -- "Start Vote" button (shifted left to make room for Spin! button)
     local startBtn = CreateFrame("Button", nil, frame, "BackdropTemplate")
     startBtn:SetSize(140, 32)
-    startBtn:SetPoint("BOTTOM", frame, "BOTTOM", 0, 12)
+    startBtn:SetPoint("BOTTOM", frame, "BOTTOM", -78, 12)
     startBtn:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8x8",
         edgeFile = "Interface\\Buttons\\WHITE8x8",
@@ -240,6 +241,38 @@ local function CreateSetupFrame()
         if onSetupStart then onSetupStart(frame.duration) end
     end)
     frame.startBtn = startBtn
+
+    -- "Spin!" button (gold accent, to the right of Start Vote)
+    local spinBtn = CreateFrame("Button", nil, frame, "BackdropTemplate")
+    spinBtn:SetSize(80, 32)
+    spinBtn:SetPoint("BOTTOM", frame, "BOTTOM", 78, 12)
+    spinBtn:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8x8",
+        edgeFile = "Interface\\Buttons\\WHITE8x8",
+        edgeSize = 1,
+        insets = { left = 1, right = 1, top = 1, bottom = 1 },
+    })
+    spinBtn:SetBackdropColor(0.20, 0.14, 0.02, 0.9)
+    spinBtn:SetBackdropBorderColor(0.85, 0.65, 0.10, 0.8)
+
+    local spinTxt = spinBtn:CreateFontString(nil, "OVERLAY")
+    spinTxt:SetFont("Fonts\\FRIZQT__.TTF", 14, "OUTLINE")
+    spinTxt:SetPoint("CENTER")
+    spinTxt:SetText("Spin!")
+    spinTxt:SetTextColor(1.0, 0.82, 0.0)
+
+    spinBtn:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(0.30, 0.22, 0.04, 0.95)
+        self:SetBackdropBorderColor(1.0, 0.80, 0.20, 1.0)
+    end)
+    spinBtn:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(0.20, 0.14, 0.02, 0.9)
+        self:SetBackdropBorderColor(0.85, 0.65, 0.10, 0.8)
+    end)
+    spinBtn:SetScript("OnClick", function()
+        if onSetupSpin then onSetupSpin() end
+    end)
+    frame.spinBtn = spinBtn
 
     -- ESC to close
     frame:SetScript("OnKeyDown", function(self, key)
@@ -1211,6 +1244,7 @@ QoL.Features.KeyVote_UpdateSetupPlayers = UpdateSetupPlayers
 QoL.Features.KeyVote_HideSetupPopup    = HideSetupPopup
 QoL.Features.KeyVote_SetSetupStartCallback = function(cb) onSetupStart = cb end
 QoL.Features.KeyVote_SetSetupCloseCallback = function(cb) onSetupClose = cb end
+QoL.Features.KeyVote_SetSetupSpinCallback  = function(cb) onSetupSpin  = cb end
 
 QoL.Features.KeyVote_ShowVotingPopup  = ShowVotingPopup
 QoL.Features.KeyVote_UpdateVotingPopup = UpdateVotingPopup

@@ -15,12 +15,14 @@ local Constants = {
     ADDON_PREFIX = "FulohQoL",
 
     -- Protocol opcodes
-    OPCODE_START  = "KVSTART",
-    OPCODE_KEY    = "KVKEY",
-    OPCODE_VOTE   = "KVVOTE",
-    OPCODE_CANCEL = "KVCANCEL",
-    OPCODE_PING   = "KVPING",
-    OPCODE_PONG   = "KVPONG",
+    OPCODE_START     = "KVSTART",
+    OPCODE_KEY       = "KVKEY",
+    OPCODE_VOTE      = "KVVOTE",
+    OPCODE_CANCEL    = "KVCANCEL",
+    OPCODE_PING      = "KVPING",
+    OPCODE_PONG      = "KVPONG",
+    OPCODE_WHEELOPEN = "KVWHEELOPEN",
+    OPCODE_SPIN      = "KVSPIN",
 
     -- Timers (seconds)
     VOTE_DURATION    = 30,

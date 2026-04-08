@@ -30,6 +30,7 @@ Features\FilledGroupAlert\FilledGroupAlert.lua
 Features\KeyVote\Constants.lua
 Features\KeyVote\Comms.lua
 Features\KeyVote\UI.lua
+Features\KeyVote\WheelTest.lua
 Features\KeyVote\KeyVote.lua
 
 Features\MageFoodReminder\Constants.lua
