@@ -604,12 +604,17 @@ local function OnChatMsgParty(msg, senderName)
     local db = GetDB()
     if not db.enableChatTrigger then return end
 
+    if not senderName or not msg then return end
+
     -- Only react to own messages
+    -- Use Ambiguate() instead of :match() — CHAT_MSG_PARTY can deliver senderName
+    -- as a "secret string" tainted by WoW's secure frame system in some contexts,
+    -- and Lua string methods fail on tainted strings while C API functions do not.
     local playerName = GetPlayerName()
-    local shortSender = senderName:match("^([^-]+)") or senderName
+    local shortSender = Ambiguate(senderName, "none")
     if shortSender ~= playerName then return end
 
-    local lower = msg:lower()
+    local lower = string.lower(msg)
     if lower == "!vote" or lower == "!keyvote" then
         StartVote()
     end
