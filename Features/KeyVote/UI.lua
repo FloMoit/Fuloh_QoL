@@ -65,7 +65,6 @@ local function CreateSetupFrame()
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
     frame:EnableMouse(true)
-    frame:EnableKeyboard(true)
     frame:SetMovable(true)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
@@ -273,16 +272,6 @@ local function CreateSetupFrame()
         if onSetupSpin then onSetupSpin() end
     end)
     frame.spinBtn = spinBtn
-
-    -- ESC to close
-    frame:SetScript("OnKeyDown", function(self, key)
-        if key == "ESCAPE" then
-            self:SetPropagateKeyboardInput(false)
-            if onSetupClose then onSetupClose() end
-        else
-            self:SetPropagateKeyboardInput(true)
-        end
-    end)
 
     -- Duration spinner wiring (stored on frame for layout pass)
     frame.duration = C.VOTE_DURATION
@@ -542,7 +531,6 @@ local function CreateVotingFrame()
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
     frame:EnableMouse(true)
-    frame:EnableKeyboard(true)
     frame:SetMovable(true)
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", function(self) self:StartMoving() end)
@@ -688,16 +676,6 @@ local function CreateVotingFrame()
         end
     end)
     frame.voteBtn = voteBtn
-
-    -- ESC to close
-    frame:SetScript("OnKeyDown", function(self, key)
-        if key == "ESCAPE" then
-            self:SetPropagateKeyboardInput(false)
-            if onVoteClose then onVoteClose() end
-        else
-            self:SetPropagateKeyboardInput(true)
-        end
-    end)
 
     return frame
 end
