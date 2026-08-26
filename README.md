@@ -59,17 +59,6 @@ Plays a sound when your group reaches 5 members.
 | `/fuloh fga debug` | Toggle debug mode |
 | `/fuloh fga help` | Show help |
 
-### KeyVote
-Polls the party on which key to run. Uses addon messages for cross-client sync; also responds to `!vote` / `!keyvote` in party chat.
-
-| Command | Description |
-|---|---|
-| `/fuloh vote start` | Start a key vote |
-| `/fuloh vote cancel` | Cancel current vote |
-| `/fuloh vote test` | Preview vote UI |
-| `/fuloh vote testresult` | Preview results UI |
-| `/fuloh vote help` | Show help |
-
 ### MageFoodReminder
 Reminds healers to stock Mage Food before entering a Mythic dungeon.
 
